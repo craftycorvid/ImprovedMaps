@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "com.craftycorvid.improvedmaps.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"FilledMapItemMixin",
+		"MapStateMixin",
+		"ShapelessRecipeMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

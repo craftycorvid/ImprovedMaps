@@ -1,0 +1,11 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        "minecraft:filled_map",
+        "minecraft:book"
+    ],
+    "result": {
+        "id": "improved-maps:atlas",
+        "count": 1
+    }
+}
