@@ -4,8 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"FilledMapItemMixin",
-		"MapStateMixin",
-		"ShapelessRecipeMixin"
+		"MapStateMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
