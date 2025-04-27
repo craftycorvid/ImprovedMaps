@@ -3,6 +3,7 @@
 	"package": "com.craftycorvid.improvedmaps.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"BundleContentsBuilderMixin",
 		"FilledMapItemMixin",
 		"MapStateMixin"
 	],
