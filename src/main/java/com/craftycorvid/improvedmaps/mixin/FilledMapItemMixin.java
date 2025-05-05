@@ -46,12 +46,25 @@ public class FilledMapItemMixin extends Item {
         if (mapState != null) {
             addLore(mapState, map);
         }
+    }
 
+    @Inject(method = "copyMap", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/item/ItemStack;set(Lnet/minecraft/component/ComponentType;Ljava/lang/Object;)Ljava/lang/Object;"))
+    private static void addLoreOnCopy(ItemStack map, ServerWorld world, CallbackInfo ci,
+            @Local MapIdComponent mapIdComponent) {
+        var mapState = world.getMapState(mapIdComponent);
+        if (mapState != null) {
+            addLore(mapState, map);
+        }
     }
 
     private static void addLore(MapState mapState, ItemStack stack) {
         List<Text> loreTexts = Lists.newArrayList();
 
+        loreTexts.add(Text
+                .literal("Dimension " + ImprovedMapsUtils
+                        .formatDimensionString(mapState.dimension.getValue().toString()))
+                .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
         loreTexts.add(Text.literal("Center " + mapState.centerX + ", " + mapState.centerZ)
                 .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
         loreTexts.add(Text.literal("Scale " + ImprovedMapsUtils.scaleToString((int) mapState.scale))

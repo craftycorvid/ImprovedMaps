@@ -15,6 +15,10 @@ public class ImprovedMapsComponentTypes {
         public static final ComponentType<Integer> ATLAS_SCALE =
                         new ComponentType.Builder<Integer>().codec(Codec.INT)
                                         .packetCodec(PacketCodecs.VAR_INT).build();
+        public static final ComponentType<String> ATLAS_DIMENSION =
+                        new ComponentType.Builder<String>().codec(Codec.STRING)
+                                        .packetCodec(PacketCodecs.STRING).build();
+
 
         public static void initialize() {
                 Registry.register(Registries.DATA_COMPONENT_TYPE,
@@ -22,7 +26,12 @@ public class ImprovedMapsComponentTypes {
                                 ATLAS_EMPTY_MAP_COUNT);
                 Registry.register(Registries.DATA_COMPONENT_TYPE,
                                 Identifier.of(ImprovedMaps.MOD_ID, "atlas_scale"), ATLAS_SCALE);
+                Registry.register(Registries.DATA_COMPONENT_TYPE,
+                                Identifier.of(ImprovedMaps.MOD_ID, "atlas_dimension"),
+                                ATLAS_DIMENSION);
                 PolymerComponent.registerDataComponent(ATLAS_EMPTY_MAP_COUNT);
                 PolymerComponent.registerDataComponent(ATLAS_SCALE);
+                PolymerComponent.registerDataComponent(ATLAS_DIMENSION);
+
         }
 }

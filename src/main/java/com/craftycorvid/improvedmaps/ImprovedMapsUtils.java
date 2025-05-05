@@ -17,4 +17,17 @@ public class ImprovedMapsUtils {
                 return "Unknown Scale";
         }
     }
+
+    public static String formatDimensionString(String dimension) {
+        switch (dimension) {
+            case "minecraft:overworld":
+                return "Overworld";
+            case "minecraft:the_nether":
+                return "The Nether";
+            case "minecraft:the_end":
+                return "The End";
+            default:
+                return dimension;
+        }
+    }
 }

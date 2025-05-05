@@ -53,10 +53,15 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
     @Override
     public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, PacketContext context) {
+        String dimension = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
         Integer scale = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, null);
         Integer empty_maps =
                 stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
+        if (dimension != null)
+            tooltip.add(
+                    Text.literal("Dimension " + ImprovedMapsUtils.formatDimensionString(dimension))
+                            .formatted(Formatting.GRAY));
         if (scale != null)
             tooltip.add(Text.literal("Scale " + ImprovedMapsUtils.scaleToString(scale))
                     .formatted(Formatting.GRAY));
@@ -69,6 +74,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         ItemStack map = bundleContents.get(0);
         MapState activeState = FilledMapItem.getMapState(map, world);
         stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, (int) activeState.scale);
+        stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
+                activeState.dimension.getValue().toString());
     }
 
     @Override
@@ -90,10 +97,13 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             if (itemStack.isOf(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, itemStack, clickType);
             } else if (itemStack.isOf(Items.FILLED_MAP)) {
+                String dimension =
+                        atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
                 int scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, 0);
                 MapState mapState = FilledMapItem.getMapState(itemStack, player.getWorld());
 
-                if ((int) mapState.scale != scale)
+                if ((int) mapState.scale != scale
+                        || !mapState.dimension.getValue().toString().equals(dimension))
                     return false;
 
                 if (builder.add(slot, player) > 0) {
@@ -146,10 +156,13 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             if (otherStack.isOf(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, otherStack, clickType);
             } else if (otherStack.isOf(Items.FILLED_MAP)) {
+                String dimension =
+                        atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
                 int scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, 0);
                 MapState mapState = FilledMapItem.getMapState(otherStack, player.getWorld());
 
-                if ((int) mapState.scale != scale) {
+                if ((int) mapState.scale != scale
+                        || !mapState.dimension.getValue().toString().equals(dimension)) {
                     playInsertFailSound(player);
                     return false;
                 }
