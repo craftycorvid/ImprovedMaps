@@ -45,14 +45,9 @@ public class ImprovedMapsLifecycleEvents {
             return;
 
         MapState activeState = FilledMapItem.getMapState(mapStack, world);
-        byte scale = activeState.scale;
-        int scaleWidth = (1 << scale) * 128;
         // Create new Map entries
-        boolean isPlayerOutsideAllMapRegions =
-                distanceBetweenMapStateAndPlayer(activeState, player) > scaleWidth;
-
-        if (isPlayerOutsideAllMapRegions) {
-            ItemStack newMap = maybeCreateNewMapEntry(player, atlas, scale,
+        if (isPlayerOutsideAllMapRegions(activeState, player)) {
+            ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
                     MathHelper.floor(player.getX()), MathHelper.floor(player.getZ()));
             if (newMap != null)
                 mapStack = newMap;
@@ -62,6 +57,13 @@ public class ImprovedMapsLifecycleEvents {
             atlas.set(DataComponentTypes.MAP_ID, mapStack.get(DataComponentTypes.MAP_ID));
             mapStack.inventoryTick(world, player, slot);
         }
+    }
+
+    private static boolean isPlayerOutsideAllMapRegions(MapState activeState, PlayerEntity player) {
+        byte scale = activeState.scale;
+        int scaleWidthFromCenter = ((1 << scale) * 64) + 8;
+        return Math.abs(activeState.centerX - player.getX()) > scaleWidthFromCenter
+                || Math.abs(activeState.centerZ - player.getZ()) > scaleWidthFromCenter;
     }
 
     public static List<ItemStack> getAllMapsFromAtlas(World world, ItemStack atlas) {
@@ -109,7 +111,7 @@ public class ImprovedMapsLifecycleEvents {
     }
 
     private static ItemStack maybeCreateNewMapEntry(ServerPlayerEntity player, ItemStack atlas,
-            int scale, int destX, int destZ) {
+            MapState activeState, int playerX, int playerZ) {
         BundleContentsComponent bundleContents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(bundleContents);
@@ -117,10 +119,21 @@ public class ImprovedMapsLifecycleEvents {
         if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
             try {
                 mutex.acquire();
+                byte scale = activeState.scale;
+                int currentX = activeState.centerX;
+                int currentZ = activeState.centerZ;
+                int scaleWidth = (1 << scale) * 128;
+
+                int newX = Math.abs(currentX - playerX) > (scaleWidth / 2)
+                        ? currentX > playerX ? currentX - scaleWidth : currentX + scaleWidth
+                        : currentX;
+                int newZ = Math.abs(currentZ - playerZ) > (scaleWidth / 2)
+                        ? currentZ > playerZ ? currentZ - scaleWidth : currentZ + scaleWidth
+                        : currentZ;
 
                 // Make the new map
-                ItemStack newMap = FilledMapItem.createMap((ServerWorld) player.getWorld(), destX,
-                        destZ, (byte) scale, true, false);
+                ItemStack newMap = FilledMapItem.createMap((ServerWorld) player.getWorld(), newX,
+                        newZ, (byte) scale, true, false);
                 builder.add(newMap);
                 atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
                 atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
