@@ -9,6 +9,7 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
+import com.craftycorvid.improvedmaps.recipe.AtlasCopyRecipe;
 import com.craftycorvid.improvedmaps.recipe.AtlasRecipe;
 
 
@@ -18,6 +19,7 @@ public class ImprovedMaps implements ModInitializer {
 
 
 	public static SpecialRecipeSerializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
+	public static SpecialRecipeSerializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
 
 	@Override
 	public void onInitialize() {
@@ -29,6 +31,9 @@ public class ImprovedMaps implements ModInitializer {
 		ATLAS_RECIPE_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER,
 				Identifier.of(MOD_ID, "crafting_atlas"),
 				new AtlasRecipe.Serializer(AtlasRecipe::new));
+		ATLAS_COPY_RECIPE_SERIALIZER =
+				Registry.register(Registries.RECIPE_SERIALIZER, Identifier.of(MOD_ID, "copy_atlas"),
+						new AtlasCopyRecipe.Serializer(AtlasCopyRecipe::new));
 		ServerTickEvents.START_SERVER_TICK
 				.register(ImprovedMapsLifecycleEvents::ImprovedMapsServerTick);
 	}

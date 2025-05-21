@@ -1,8 +1,6 @@
 # Improved Maps [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**This is a work in progress!**
-
-This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](https://modrinth.com/mod/fabric-api). Works with Vanilla clients!
+This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](https://modrinth.com/mod/fabric-api). Works with Vanilla clients thanks to [Polymer](https://modrinth.com/mod/polymer)!
 
 ### Current Features
 - **Atlas** - A combination between a bundle and a map. 
@@ -12,9 +10,15 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
   - Fits up to 512 filled maps, and any number of empty maps
 - **Map Information Tooltips** - See the map scale and center coordinates right from the tooltip
 
-### Planned/Missing Features
-- Cartography table interactions
-- Optional client-side features like a mini-map and world map
+### How to use Atlases
+- Craft one by combining a filled map and a book in a crafting bench
+  - An Atlas is specific to a dimension
+  - All maps in an Atlas must have the same scale
+- Atlases behave like bundles, but can only take filled and empty maps
+- Copy and Atlas by combining an Atlas and a book, either in a crafting bench or a cartography table
+  - You must have enough empty maps in the Atlas to copy it, otherwise it won't craft
+  - You'll get 2 identical Atlases, each containing half the remaining empty maps
+- You can take maps out like you would take items out of a bundle. To take out the empty maps you can either place the Atlas in a cartography table, or take out all the filled maps then right-click the empty Atlas in your inventory
 
 ### Shout-outs
 - [Map Atlases](https://modrinth.com/mod/map-atlases) by Pepperoni-Jabroni for the original idea and map switching logic.

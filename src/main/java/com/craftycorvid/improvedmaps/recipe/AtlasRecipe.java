@@ -1,6 +1,5 @@
 package com.craftycorvid.improvedmaps.recipe;
 
-import java.util.ArrayList;
 import java.util.List;
 import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
@@ -28,25 +27,18 @@ public class AtlasRecipe extends SpecialCraftingRecipe {
     @Override
     public boolean matches(CraftingRecipeInput inventory, World world) {
         List<ItemStack> itemStacks = inventory.getStacks();
-        List<ItemStack> atlases = new ArrayList<>();
         ItemStack filledMap = ItemStack.EMPTY;
         Boolean hasBook = false;
         for (ItemStack stack : itemStacks) {
-            if (stack.isOf(ImprovedMapsItems.ATLAS)) {
-                atlases.add(stack);
-            } else if (stack.isOf(Items.FILLED_MAP)) {
+            if (stack.isOf(Items.FILLED_MAP)) {
                 filledMap = stack;
             } else if (stack.isOf(Items.BOOK)) {
                 hasBook = true;
             }
         }
-        if (itemStacks.size() == 2) {
-            if (hasBook && !filledMap.isEmpty()) {
-                MapState state = FilledMapItem.getMapState(filledMap, world);
-                return state != null;
-            } else if (atlases.size() == 2) {
-                return true;
-            }
+        if (itemStacks.size() == 2 && hasBook && !filledMap.isEmpty()) {
+            MapState state = FilledMapItem.getMapState(filledMap, world);
+            return state != null;
         }
         return false;
     }
@@ -57,28 +49,12 @@ public class AtlasRecipe extends SpecialCraftingRecipe {
         ItemStack map = inventory.getStacks().stream().filter(stack -> stack.isOf(Items.FILLED_MAP))
                 .findFirst().orElse(null);
 
-        if (map != null) {
-            BundleContentsComponent.Builder builder =
-                    new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
-            builder.add(map);
-            map.increment(1);
-            atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
-            atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
-        } else {
-            ItemStack originalAtlas = inventory.getStackInSlot(0);
-            ItemStack secondAtlas = inventory.getStackInSlot(1);
-            int originalFilledMaps =
-                    originalAtlas.get(DataComponentTypes.BUNDLE_CONTENTS).getNumberOfStacksShown();
-            int emptyMapCount = originalAtlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT)
-                    + secondAtlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
-            int newEmptyMapCount = (emptyMapCount - originalFilledMaps) / 2;
-            if (newEmptyMapCount < 0) {
-                return ItemStack.EMPTY;
-            }
-            atlas = originalAtlas.copy();
-            atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, newEmptyMapCount);
-            atlas.increment(1);
-        }
+        BundleContentsComponent.Builder builder =
+                new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
+        builder.add(map);
+        map.increment(1);
+        atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
+        atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
 
         return atlas;
     }
