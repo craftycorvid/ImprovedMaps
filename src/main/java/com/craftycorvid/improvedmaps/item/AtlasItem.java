@@ -1,13 +1,18 @@
 package com.craftycorvid.improvedmaps.item;
 
+import java.util.ArrayList;
 import java.util.List;
+import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import eu.pb4.polymer.core.api.item.PolymerItem;
+import eu.pb4.polymer.networking.api.server.PolymerServerNetworking;
+import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.BundleContentsComponent;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.MapIdComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -20,9 +25,12 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.Items;
 import net.minecraft.item.consume.UseAction;
 import net.minecraft.item.map.MapState;
+import net.minecraft.item.tooltip.TooltipType;
+import net.minecraft.nbt.NbtInt;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -33,6 +41,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import xyz.nucleoid.packettweaker.PacketContext;
 
+import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
+
 public class AtlasItem extends BundleItem implements PolymerItem {
     public AtlasItem(Settings settings) {
         super(settings);
@@ -40,12 +50,37 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
     @Override
     public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
-        return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;
+        ServerPlayerEntity player = context.getPlayer();
+        if (player != null && player instanceof ServerPlayerEntity && PolymerServerNetworking
+                .getMetadata(player.networkHandler, ImprovedMaps.HELLO_PACKET, NbtInt.TYPE) != null)
+            return this;
+        else
+            return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;
     }
 
     @Override
     public Identifier getPolymerItemModel(ItemStack itemStack, PacketContext context) {
-        return Identifier.of("minecraft", "book");
+        if (PolymerResourcePackUtils.hasMainPack(context)) {
+            return id("atlas");
+        } else {
+            return Identifier.of("minecraft", "book");
+        }
+    }
+
+    @Override
+    public ItemStack getPolymerItemStack(ItemStack itemStack, TooltipType tooltipType,
+            PacketContext context) {
+        ItemStack clientStack =
+                PolymerItem.super.getPolymerItemStack(itemStack, tooltipType, context);
+
+        String dimension = itemStack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
+
+        List<String> stringList = new ArrayList<>();
+        stringList.add(dimension);
+
+        clientStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+                new ArrayList<>(), new ArrayList<>(), stringList, new ArrayList<>()));
+        return clientStack;
     }
 
     @Override
@@ -56,7 +91,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         Integer empty_maps =
                 stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
-        tooltip.add(Text.literal(filled_maps + " / 512 Filled Maps").formatted(Formatting.GRAY));
+        tooltip.add(Text.literal(filled_maps + "/512 Filled Maps").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(empty_maps + " Empty Maps").formatted(Formatting.GRAY));
         if (dimension != null)
             tooltip.add(
@@ -98,8 +133,9 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             if (itemStack.isOf(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, itemStack, clickType);
             } else if (itemStack.isOf(Items.FILLED_MAP)) {
-                String dimension = atlas.get(ImprovedMapsComponentTypes.ATLAS_DIMENSION);
-                int scale = atlas.get(ImprovedMapsComponentTypes.ATLAS_SCALE);
+                String dimension =
+                        atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
+                int scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, -1);
                 MapState mapState = FilledMapItem.getMapState(itemStack, player.getWorld());
 
                 if ((int) mapState.scale != scale

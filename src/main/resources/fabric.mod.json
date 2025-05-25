@@ -3,7 +3,7 @@
 	"id": "improved-maps",
 	"version": "${version}",
 	"name": "Improved Maps",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Server-side mod implementing Atlases and other map features",
 	"authors": [
 		"CraftyCorvid"
 	],
@@ -11,7 +11,7 @@
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/improved-maps/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -33,6 +33,13 @@
 		"fabricloader": ">=0.16.13",
 		"minecraft": "~1.21.5",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"polymer-core": "*",
+		"polymer-resource-pack": "*",
+		"polymer-networking": "*"
+	},
+	"suggest": {
+		"modmenu": ">=14.0.0-rc.2",
+		"better-nether-map": "*"
 	}
 }

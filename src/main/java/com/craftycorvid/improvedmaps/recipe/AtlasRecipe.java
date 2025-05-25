@@ -3,6 +3,7 @@ package com.craftycorvid.improvedmaps.recipe;
 import java.util.List;
 import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
+import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import eu.pb4.polymer.core.api.utils.PolymerObject;
 import net.minecraft.component.DataComponentTypes;
@@ -51,6 +52,7 @@ public class AtlasRecipe extends SpecialCraftingRecipe {
 
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
         builder.add(map);
         map.increment(1);
         atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());

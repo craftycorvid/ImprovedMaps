@@ -37,7 +37,8 @@ public class ImprovedMapsUtils {
     public static ItemStack copyAtlas(ItemStack originalAtlas) {
         int originalAtlasFilledMapCount =
                 originalAtlas.get(DataComponentTypes.BUNDLE_CONTENTS).size();
-        int emptyMapCount = originalAtlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
+        int emptyMapCount =
+                originalAtlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         int newEmptyMapCount = Math.floorDiv(emptyMapCount - originalAtlasFilledMapCount, 2);
         if (newEmptyMapCount < 0) {
             return ItemStack.EMPTY;

@@ -3,6 +3,7 @@ package com.craftycorvid.improvedmaps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.BundleContentsComponent;
@@ -19,7 +20,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
-public class ImprovedMapsLifecycleEvents {
+public final class ImprovedMapsLifecycleEvents {
     // Used to prevent Map creation spam consuming all Empty Maps on auto-create
     private static final Semaphore mutex = new Semaphore(1);
 
@@ -46,7 +47,9 @@ public class ImprovedMapsLifecycleEvents {
 
         MapState activeState = FilledMapItem.getMapState(mapStack, world);
         // Create new Map entries
-        if (isPlayerOutsideAllMapRegions(activeState, player)) {
+        if (isPlayerOutsideAllMapRegions(activeState, player)
+                && atlas.get(ImprovedMapsComponentTypes.ATLAS_DIMENSION)
+                        .equals(world.getRegistryKey().getValue().toString())) {
             ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
                     MathHelper.floor(player.getX()), MathHelper.floor(player.getZ()));
             if (newMap != null)
@@ -115,6 +118,7 @@ public class ImprovedMapsLifecycleEvents {
         BundleContentsComponent bundleContents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(bundleContents);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
         int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
         if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
             try {

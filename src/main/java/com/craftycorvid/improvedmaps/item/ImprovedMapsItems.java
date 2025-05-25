@@ -1,7 +1,6 @@
 package com.craftycorvid.improvedmaps.item;
 
 import java.util.function.Function;
-import com.craftycorvid.improvedmaps.ImprovedMaps;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.BundleContentsComponent;
@@ -11,7 +10,8 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.Identifier;
+
+import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
 
 public class ImprovedMapsItems {
         public static final Item ATLAS = register("atlas", AtlasItem::new,
@@ -26,8 +26,7 @@ public class ImprovedMapsItems {
 
         public static Item register(String name, Function<Item.Settings, Item> itemFactory,
                         Item.Settings settings) {
-                RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM,
-                                Identifier.of(ImprovedMaps.MOD_ID, name));
+                RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, id(name));
                 Item item = itemFactory.apply(settings.registryKey(itemKey));
                 Registry.register(Registries.ITEM, itemKey, item);
                 return item;

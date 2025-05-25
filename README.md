@@ -15,11 +15,21 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
   - An Atlas is specific to a dimension
   - All maps in an Atlas must have the same scale
 - Atlases behave like bundles, but can only take filled and empty maps
-- Copy and Atlas by combining an Atlas and a book, either in a crafting bench or a cartography table
+- Copy an Atlas by combining an Atlas and a book, either in a crafting bench or a cartography table
   - You must have enough empty maps in the Atlas to copy it, otherwise it won't craft
   - You'll get 2 identical Atlases, each containing half the remaining empty maps
 - You can take maps out like you would take items out of a bundle. To take out the empty maps you can either place the Atlas in a cartography table, or take out all the filled maps then right-click the empty Atlas in your inventory
 
+### (Optional) Client-side features
+- Installing the mod client-side will show custom icons for the Atlas item
+- Icons can also be used by providing the Polymer resource pack to your vanilla clients
+  - Find out how to setup Polymer AutoHost here: https://polymer.pb4.eu/latest/user/resource-pack-hosting/
+  - Run `/polymer generate-pack` after installing the mod to generate the resource pack
+
+### Known Issues
+- Cartography table result slot doesn't work well. You can click the empty slot and get the correct result, it just won't preview.
+
 ### Shout-outs
+- [Pillowsledder](https://bsky.app/profile/pillowsledder.bsky.social) for creating the exellent icons!
 - [Map Atlases](https://modrinth.com/mod/map-atlases) by Pepperoni-Jabroni for the original idea and map switching logic.
 - [Diversity: Better Bundle](https://modrinth.com/mod/diversity-better-bundle) by FaeWulf for implementation of larger bundle sizes

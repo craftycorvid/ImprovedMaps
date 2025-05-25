@@ -1,10 +1,12 @@
 package com.craftycorvid.improvedmaps;
 
+import eu.pb4.polymer.networking.api.client.PolymerClientNetworking;
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.nbt.NbtInt;
 
 public class ImprovedMapsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		// This entrypoint is suitable for setting up client-specific logic, such as rendering.
+		PolymerClientNetworking.setClientMetadata(ImprovedMaps.HELLO_PACKET, NbtInt.of(1));
 	}
 }
