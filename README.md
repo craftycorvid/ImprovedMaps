@@ -30,6 +30,6 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
 - Cartography table result slot doesn't work well. You can click the empty slot and get the correct result, it just won't preview.
 
 ### Shout-outs
-- [Pillowsledder](https://bsky.app/profile/pillowsledder.bsky.social) for creating the exellent icons!
+- [Pillowsledder](https://bsky.app/profile/pillowsledder.bsky.social) for creating the excellent icons!
 - [Map Atlases](https://modrinth.com/mod/map-atlases) by Pepperoni-Jabroni for the original idea and map switching logic.
 - [Diversity: Better Bundle](https://modrinth.com/mod/diversity-better-bundle) by FaeWulf for implementation of larger bundle sizes

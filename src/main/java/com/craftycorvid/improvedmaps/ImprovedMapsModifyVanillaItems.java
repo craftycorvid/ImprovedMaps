@@ -39,7 +39,6 @@ public final class ImprovedMapsModifyVanillaItems {
                         .literal("Scale " + ImprovedMapsUtils.scaleToString((int) mapState.scale))
                         .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
 
-
                 var loreComponent = new LoreComponent(loreTexts);
                 out.applyComponentsFrom(
                         ComponentMap.builder().add(DataComponentTypes.LORE, loreComponent).build());
