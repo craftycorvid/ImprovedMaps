@@ -87,7 +87,9 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, PacketContext context) {
         String dimension = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
         Integer scale = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, null);
-        int filled_maps = stack.get(DataComponentTypes.BUNDLE_CONTENTS).size();
+        int filled_maps = stack
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
+                .size();
         Integer empty_maps =
                 stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
@@ -104,7 +106,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
     @Override
     public void onCraft(ItemStack stack, World world) {
-        BundleContentsComponent bundleContents = stack.get(DataComponentTypes.BUNDLE_CONTENTS);
+        BundleContentsComponent bundleContents = stack
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
         ItemStack map = bundleContents.get(0);
         MapIdComponent mapIdComponent = map.get(DataComponentTypes.MAP_ID);
         MapState activeState = FilledMapItem.getMapState(mapIdComponent, world);

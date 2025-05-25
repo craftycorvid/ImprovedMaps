@@ -26,6 +26,9 @@ public final class ImprovedMapsModifyVanillaItems {
             if (original.isOf(Items.FILLED_MAP)) {
                 ItemStack out = original.copy();
                 List<Text> loreTexts = Lists.newArrayList();
+                if (context.getPlayer() == null) {
+                    return client;
+                }
                 World world = context.getPlayer().getWorld();
                 MapState mapState = FilledMapItem.getMapState(out, world);
 

@@ -20,7 +20,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
-
 // Logic based on
 // https://github.com/Pepperoni-Jabroni/MapAtlases/blob/main/src/main/java/pepjebs/mapatlases/lifecycle/MapAtlasesServerLifecycleEvents.java
 public final class ImprovedMapsLifecycleEvents {
@@ -51,7 +50,7 @@ public final class ImprovedMapsLifecycleEvents {
         MapState activeState = FilledMapItem.getMapState(mapStack, world);
         // Create new Map entries
         if (isPlayerOutsideAllMapRegions(activeState, player)
-                && atlas.get(ImprovedMapsComponentTypes.ATLAS_DIMENSION)
+                && atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "")
                         .equals(world.getRegistryKey().getValue().toString())) {
             ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
                     MathHelper.floor(player.getX()), MathHelper.floor(player.getZ()));
@@ -73,7 +72,8 @@ public final class ImprovedMapsLifecycleEvents {
     }
 
     public static List<ItemStack> getAllMapsFromAtlas(World world, ItemStack atlas) {
-        BundleContentsComponent bundleContents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
+        BundleContentsComponent bundleContents = atlas
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
         List<ItemStack> mapStacks = new ArrayList<>();
         bundleContents.iterate().forEach((map) -> {
             if (!map.isEmpty() && map.isOf(Items.FILLED_MAP))
@@ -118,11 +118,12 @@ public final class ImprovedMapsLifecycleEvents {
 
     private static ItemStack maybeCreateNewMapEntry(ServerPlayerEntity player, ItemStack atlas,
             MapState activeState, int playerX, int playerZ) {
-        BundleContentsComponent bundleContents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
+        BundleContentsComponent bundleContents = atlas
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(bundleContents);
         ((ICustomBundleContentBuilder) builder).setMaxSize(512);
-        int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
+        int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
             try {
                 mutex.acquire();
@@ -143,7 +144,8 @@ public final class ImprovedMapsLifecycleEvents {
                         newZ, (byte) scale, true, false);
                 builder.add(newMap);
                 atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
-                atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
+                if (!player.isCreative())
+                    atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
                 return newMap;
             } catch (InterruptedException e) {
                 ImprovedMaps.LOGGER.warn(e.getMessage());
