@@ -20,6 +20,9 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 
+
+// Logic based on
+// https://github.com/Pepperoni-Jabroni/MapAtlases/blob/main/src/main/java/pepjebs/mapatlases/lifecycle/MapAtlasesServerLifecycleEvents.java
 public final class ImprovedMapsLifecycleEvents {
     // Used to prevent Map creation spam consuming all Empty Maps on auto-create
     private static final Semaphore mutex = new Semaphore(1);

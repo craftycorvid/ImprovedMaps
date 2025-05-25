@@ -13,6 +13,8 @@ import net.minecraft.component.type.BundleContentsComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
 
+// Implementation Based on
+// https://github.com/FaeWulf/Diversity/blob/sub-mod-1.21.5/common-better-bundle/src/main/java/xyz/faewulf/diversity_better_bundle/mixin/item/buildingBundle/BuilderMixin.java
 @Mixin(BundleContentsComponent.Builder.class)
 public abstract class BundleContentsBuilderMixin implements ICustomBundleContentBuilder {
     @Shadow

@@ -4,7 +4,6 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"BundleContentsBuilderMixin",
-		"FilledMapItemMixin",
 		"MapStateMixin",
 		"CartographyTableMixin",
 		"CartographyTableMixin$ScreenHandlerAccessor",

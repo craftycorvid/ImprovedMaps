@@ -31,6 +31,7 @@ public final class ImprovedMaps implements ModInitializer {
 
 		ImprovedMapsItems.initialize();
 		ImprovedMapsComponentTypes.initialize();
+		ImprovedMapsModifyVanillaItems.initialize();
 		PolymerResourcePackUtils.addModAssets(MOD_ID);
 
 		ATLAS_RECIPE_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER,
