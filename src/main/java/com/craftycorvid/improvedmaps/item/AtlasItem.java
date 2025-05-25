@@ -86,7 +86,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     @Override
     public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, PacketContext context) {
         String dimension = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
-        Integer scale = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, null);
+        Byte scale = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, null);
         int filled_maps = stack
                 .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
                 .size();
@@ -112,7 +112,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         MapIdComponent mapIdComponent = map.get(DataComponentTypes.MAP_ID);
         MapState activeState = FilledMapItem.getMapState(mapIdComponent, world);
         if (activeState != null) {
-            stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, (int) activeState.scale);
+            stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, activeState.scale);
             stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
                     activeState.dimension.getValue().toString());
         }
@@ -140,10 +140,10 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             } else if (itemStack.isOf(Items.FILLED_MAP)) {
                 String dimension =
                         atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
-                int scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, -1);
+                Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) -1);
                 MapState mapState = FilledMapItem.getMapState(itemStack, player.getWorld());
 
-                if ((int) mapState.scale != scale
+                if (mapState.scale != scale
                         || !mapState.dimension.getValue().toString().equals(dimension))
                     return false;
 
@@ -199,10 +199,10 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             } else if (otherStack.isOf(Items.FILLED_MAP)) {
                 String dimension =
                         atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
-                int scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, 0);
+                Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) 0);
                 MapState mapState = FilledMapItem.getMapState(otherStack, player.getWorld());
 
-                if ((int) mapState.scale != scale
+                if (mapState.scale != scale
                         || !mapState.dimension.getValue().toString().equals(dimension)) {
                     playInsertFailSound(player);
                     return false;

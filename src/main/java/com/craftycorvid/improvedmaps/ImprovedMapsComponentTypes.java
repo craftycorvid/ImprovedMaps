@@ -14,9 +14,8 @@ public class ImprovedMapsComponentTypes {
         public static final ComponentType<Integer> ATLAS_EMPTY_MAP_COUNT =
                         new ComponentType.Builder<Integer>().codec(Codec.INT)
                                         .packetCodec(PacketCodecs.VAR_INT).build();
-        public static final ComponentType<Integer> ATLAS_SCALE =
-                        new ComponentType.Builder<Integer>().codec(Codec.INT)
-                                        .packetCodec(PacketCodecs.VAR_INT).build();
+        public static final ComponentType<Byte> ATLAS_SCALE = new ComponentType.Builder<Byte>()
+                        .codec(Codec.BYTE).packetCodec(PacketCodecs.BYTE).build();
         public static final ComponentType<String> ATLAS_DIMENSION =
                         new ComponentType.Builder<String>().codec(Codec.STRING)
                                         .packetCodec(PacketCodecs.STRING).build();
