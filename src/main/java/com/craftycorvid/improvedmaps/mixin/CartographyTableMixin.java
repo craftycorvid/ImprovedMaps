@@ -19,6 +19,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.CartographyTableScreenHandler;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.collection.DefaultedList;
@@ -28,6 +29,10 @@ public abstract class CartographyTableMixin extends ScreenHandler {
     protected CartographyTableMixin(ScreenHandlerType<?> type, int syncId) {
         super(type, syncId);
     }
+
+    @Shadow
+    @Final
+    private ScreenHandlerContext context;
 
     @Shadow
     @Final
@@ -51,23 +56,30 @@ public abstract class CartographyTableMixin extends ScreenHandler {
     private void addAtlasInteractionsToUpdateResult(ItemStack map, ItemStack item,
             ItemStack oldResult, CallbackInfo ci) {
         if (map.isOf(ImprovedMapsItems.ATLAS)) {
-            ItemStack newResult = ItemStack.EMPTY;
+            this.context.run((world, pos) -> {
+                if (world.isClient())
+                    return;
 
-            if (map.isOf(ImprovedMapsItems.ATLAS) && item.isEmpty()) {
-                Integer empty_maps =
-                        map.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
-                newResult = new ItemStack(Items.MAP, empty_maps);
-                this.sendContentUpdates();
-            } else if (map.isOf(ImprovedMapsItems.ATLAS) && item.isOf(Items.BOOK)) {
-                newResult = ImprovedMapsUtils.copyAtlas(map);
-                this.sendContentUpdates();
-            }
+                ItemStack newResult = null;
 
-            if (!ItemStack.areEqual(newResult, oldResult)) {
-                this.resultInventory.setStack(CartographyTableScreenHandler.RESULT_SLOT_INDEX,
-                        newResult);
-                this.sendContentUpdates();
-            }
+                if (map.isOf(ImprovedMapsItems.ATLAS) && item.isEmpty()) {
+                    Integer empty_maps =
+                            map.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+                    if (empty_maps > 0) {
+                        newResult = new ItemStack(Items.MAP, empty_maps);
+                        this.sendContentUpdates();
+                    }
+                } else if (map.isOf(ImprovedMapsItems.ATLAS) && item.isOf(Items.BOOK)) {
+                    newResult = ImprovedMapsUtils.copyAtlas(map);
+                    this.sendContentUpdates();
+                }
+
+                if (newResult != null && !ItemStack.areEqual(newResult, oldResult)) {
+                    this.resultInventory.setStack(CartographyTableScreenHandler.RESULT_SLOT_INDEX,
+                            newResult);
+                    this.sendContentUpdates();
+                }
+            });
 
             ci.cancel();
         }

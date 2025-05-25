@@ -21,13 +21,16 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
 - You can take maps out like you would take items out of a bundle. To take out the empty maps you can either place the Atlas in a cartography table, or take out all the filled maps then right-click the empty Atlas in your inventory
 
 ### (Optional) Client-side features
-- Installing the mod client-side will show custom icons for the Atlas item
+- Installing the mod client-side will show custom icons for the Atlas item and fix some UI oddities
 - Icons can also be used by providing the Polymer resource pack to your vanilla clients
   - Find out how to setup Polymer AutoHost here: https://polymer.pb4.eu/latest/user/resource-pack-hosting/
   - Run `/polymer generate-pack` after installing the mod to generate the resource pack
 
 ### Known Issues
-- Cartography table result slot doesn't work well. You can click the empty slot and get the correct result, it just won't preview.
+- Cartography table result slot doesn't work well. You can click the empty slot and get the correct result, it just won't preview
+  - Installing the mod client-side will fix this
+- Bundle tooltip on Atlas will show full once it hits 64 maps. You can still keep adding maps
+  - Installing the mod client-side will fix this
 
 ### Shout-outs
 - [Pillowsledder](https://bsky.app/profile/pillowsledder.bsky.social) for creating the excellent icons!

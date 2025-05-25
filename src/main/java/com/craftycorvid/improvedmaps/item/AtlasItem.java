@@ -108,9 +108,11 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         ItemStack map = bundleContents.get(0);
         MapIdComponent mapIdComponent = map.get(DataComponentTypes.MAP_ID);
         MapState activeState = FilledMapItem.getMapState(mapIdComponent, world);
-        stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, (int) activeState.scale);
-        stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
-                activeState.dimension.getValue().toString());
+        if (activeState != null) {
+            stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, (int) activeState.scale);
+            stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
+                    activeState.dimension.getValue().toString());
+        }
         stack.set(DataComponentTypes.MAP_ID, mapIdComponent);
     }
 

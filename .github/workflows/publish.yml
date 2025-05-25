@@ -2,13 +2,10 @@ name: Publish on GitHub & Modrinth
 on: [ workflow_dispatch ]
 
 env:                                              
-  VERSION: 0.4.0
-  RELEASE_NAME: Improved Maps 0.4.0 for Minecraft 1.21.5
+  VERSION: 0.4.1
+  RELEASE_NAME: Improved Maps 0.4.1 for Minecraft 1.21.5
   CHANGE_LOG: |
-    - Added icons for each Atlas type created by pillowsledder
-    - Beginnings of client-side features
-    - Fixed bug with expanded atlas bundle size
-    - Only create new maps when the Atlas matches the dimension   
+    - Fixed some client-side issues
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}           
 
