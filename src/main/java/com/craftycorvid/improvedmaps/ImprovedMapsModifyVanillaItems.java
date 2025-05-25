@@ -29,21 +29,25 @@ public final class ImprovedMapsModifyVanillaItems {
                 World world = context.getPlayer().getWorld();
                 MapState mapState = FilledMapItem.getMapState(out, world);
 
-                loreTexts.add(Text
-                        .literal("Dimension " + ImprovedMapsUtils
-                                .formatDimensionString(mapState.dimension.getValue().toString()))
-                        .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
-                loreTexts.add(Text.literal("Center " + mapState.centerX + ", " + mapState.centerZ)
-                        .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
-                loreTexts.add(Text
-                        .literal("Scale " + ImprovedMapsUtils.scaleToString((int) mapState.scale))
-                        .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
+                if (mapState != null) {
+                    loreTexts.add(Text
+                            .literal("Dimension " + ImprovedMapsUtils.formatDimensionString(
+                                    mapState.dimension.getValue().toString()))
+                            .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
+                    loreTexts.add(Text
+                            .literal("Center " + mapState.centerX + ", " + mapState.centerZ)
+                            .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
+                    loreTexts.add(Text
+                            .literal("Scale "
+                                    + ImprovedMapsUtils.scaleToString((int) mapState.scale))
+                            .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
 
-                var loreComponent = new LoreComponent(loreTexts);
-                out.applyComponentsFrom(
-                        ComponentMap.builder().add(DataComponentTypes.LORE, loreComponent).build());
+                    var loreComponent = new LoreComponent(loreTexts);
+                    out.applyComponentsFrom(ComponentMap.builder()
+                            .add(DataComponentTypes.LORE, loreComponent).build());
 
-                return out;
+                    return out;
+                }
             }
             return client;
         });
