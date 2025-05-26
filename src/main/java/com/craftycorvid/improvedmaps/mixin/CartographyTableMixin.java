@@ -12,6 +12,8 @@ import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.component.ComponentChanges;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.inventory.Inventory;
@@ -22,6 +24,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.Text;
 import net.minecraft.util.collection.DefaultedList;
 
 @Mixin(CartographyTableScreenHandler.class)
@@ -33,6 +36,10 @@ public abstract class CartographyTableMixin extends ScreenHandler {
     @Shadow
     @Final
     private ScreenHandlerContext context;
+
+    @Shadow
+    @Final
+    public Inventory inventory;
 
     @Shadow
     @Final
@@ -67,6 +74,15 @@ public abstract class CartographyTableMixin extends ScreenHandler {
                             map.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                     if (empty_maps > 0) {
                         newResult = new ItemStack(Items.MAP, empty_maps);
+
+                        // Hack to get vanilla clients to show empty maps
+                        this.inventory
+                                .setStack(CartographyTableScreenHandler.MATERIAL_SLOT_INDEX,
+                                        new ItemStack(Items.DIRT.getRegistryEntry(), 1,
+                                                ComponentChanges.builder()
+                                                        .add(DataComponentTypes.CUSTOM_NAME,
+                                                                Text.literal("Fake Dirt"))
+                                                        .build()));
                         this.sendContentUpdates();
                     }
                 } else if (map.isOf(ImprovedMapsItems.ATLAS) && item.isOf(Items.BOOK)) {
@@ -99,6 +115,14 @@ public abstract class CartographyTableMixin extends ScreenHandler {
             super(inventory, slot, x, y);
         }
 
+        @Override
+        public void onTakeItem(PlayerEntity player, ItemStack stack) {
+            if (stack.isOf(Items.DIRT)) {
+                stack.decrement(1);
+                return;
+            }
+        }
+
         @ModifyReturnValue(method = "canInsert", at = @At("RETURN"))
         private boolean canInsert(boolean original, ItemStack stack) {
             return original || stack.isOf(Items.BOOK);
@@ -119,11 +143,15 @@ public abstract class CartographyTableMixin extends ScreenHandler {
         @Inject(method = "onTakeItem", at = @At("HEAD"), cancellable = true)
         public void onTakeItem(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
             var slots = ((ScreenHandlerAccessor) field_17303).getSlots();
-            var firstSlot = slots.get(0).getStack();
-            var secondSlot = slots.get(1).getStack();
+            ItemStack firstSlotStack = slots.get(0).getStack();
+            Slot secondSlot = slots.get(1);
+            ItemStack secondSlotStack = secondSlot.getStack();
 
-            if (firstSlot.isOf(ImprovedMapsItems.ATLAS) && secondSlot.isEmpty()) {
-                firstSlot.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+
+            if (firstSlotStack.isOf(ImprovedMapsItems.ATLAS)
+                    && (secondSlotStack.isEmpty() || secondSlotStack.isOf(Items.DIRT))) {
+                firstSlotStack.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+                secondSlot.takeStack(1);
                 ci.cancel();
             }
         }
