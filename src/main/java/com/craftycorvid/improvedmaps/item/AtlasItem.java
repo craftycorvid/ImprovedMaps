@@ -2,6 +2,8 @@ package com.craftycorvid.improvedmaps.item;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import org.apache.commons.lang3.math.Fraction;
 import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
@@ -14,7 +16,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.BundleContentsComponent;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.MapIdComponent;
-import net.minecraft.entity.Entity;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.StackReference;
 import net.minecraft.item.BundleItem;
@@ -25,25 +27,30 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.Items;
 import net.minecraft.item.consume.UseAction;
 import net.minecraft.item.map.MapState;
+import net.minecraft.item.tooltip.BundleTooltipData;
+import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtInt;
 import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ClickType;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ColorHelper;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import xyz.nucleoid.packettweaker.PacketContext;
 
 import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
 
 public class AtlasItem extends BundleItem implements PolymerItem {
+    private static final int FULL_ITEM_BAR_COLOR = ColorHelper.fromFloats(1.0F, 1.0F, 0.33F, 0.33F);
+    private static final int ITEM_BAR_COLOR = ColorHelper.fromFloats(1.0F, 0.44F, 0.53F, 1.0F);
+
     public AtlasItem(Settings settings) {
         super(settings);
     }
@@ -282,25 +289,74 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         return UseAction.NONE;
     }
 
-    // Private methods copied from BundleItem
-    private static void playRemoveOneSound(Entity entity) {
-        entity.playSound(SoundEvents.ITEM_BUNDLE_REMOVE_ONE, 0.8F,
-                0.8F + entity.getWorld().getRandom().nextFloat() * 0.4F);
+
+    // Client-side rendering of the bundle fullness bar
+    // Based on
+    // https://github.com/FaeWulf/Diversity/blob/sub-mod-1.21.5/common-better-bundle/src/main/java/xyz/faewulf/diversity_better_bundle/mixin/item/buildingBundle/BundleItemMixin.java
+    public static float getAmountFilled(ItemStack stack) {
+        int usedSpace = MathHelper.multiplyFraction(stack
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
+                .getOccupancy(), 64);
+        int maxValue = 512;
+
+        return usedSpace * 1f / maxValue;
     }
 
-    private static void playInsertSound(Entity entity) {
-        entity.playSound(SoundEvents.ITEM_BUNDLE_INSERT, 0.8F,
-                0.8F + entity.getWorld().getRandom().nextFloat() * 0.4F);
+    // override the weight value when pass the bundlecontens to the client side for rendering the
+    // fullness bar
+    @Override
+    public Optional<TooltipData> getTooltipData(ItemStack stack) {
+        Optional<TooltipData> original = super.getTooltipData(stack);
+
+        TooltipDisplayComponent tooltipdisplay = stack
+                .getOrDefault(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplayComponent.DEFAULT);
+
+        if (!tooltipdisplay.shouldDisplay(DataComponentTypes.BUNDLE_CONTENTS)) {
+            return original;
+        } else {
+            int usedSpace = MathHelper
+                    .multiplyFraction(stack.getOrDefault(DataComponentTypes.BUNDLE_CONTENTS,
+                            BundleContentsComponent.DEFAULT).getOccupancy(), 64);
+            int maxValue = 512;
+
+            BundleContentsComponent bundleContents = stack.getOrDefault(
+                    DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
+
+            // override to List
+            List<ItemStack> itemStacks = new ArrayList<>();
+            bundleContents.stream().forEach(itemStacks::add);
+
+            // create new bundle content
+            BundleContentsComponent bundleContents1 = new BundleContentsComponent(itemStacks,
+                    Fraction.getFraction(usedSpace * 1f / maxValue),
+                    bundleContents.getSelectedStackIndex());
+
+            // pass to client renderer
+            return Optional.ofNullable(bundleContents1).map(BundleTooltipData::new);
+        }
     }
 
-    private static void playInsertFailSound(Entity entity) {
-        entity.playSound(SoundEvents.ITEM_BUNDLE_INSERT_FAIL, 1.0F, 1.0F);
+    @Override
+    public int getItemBarStep(ItemStack stack) {
+        int usedSpace = MathHelper.multiplyFraction(stack
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
+                .getOccupancy(), 64);
+        int maxValue = 512;
+
+        return (int) Math.clamp(Math.floor(13f * usedSpace / maxValue), 1, 13);
     }
 
-    private void onContentChanged(PlayerEntity user) {
-        ScreenHandler screenHandler = user.currentScreenHandler;
-        if (screenHandler != null) {
-            screenHandler.onContentChanged(user.getInventory());
+    @Override
+    public int getItemBarColor(ItemStack stack) {
+        int usedSpace = MathHelper.multiplyFraction(stack
+                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
+                .getOccupancy(), 64);
+        int maxValue = 512;
+
+        if (usedSpace >= maxValue) {
+            return FULL_ITEM_BAR_COLOR;
+        } else {
+            return ITEM_BAR_COLOR;
         }
     }
 }

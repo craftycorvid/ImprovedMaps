@@ -11,11 +11,12 @@ base {
 
 repositories {
 	maven { url = "https://maven.terraformersmc.com" }
-	maven { url 'https://maven.nucleoid.xyz' }
+	maven { url = 'https://maven.nucleoid.xyz' }
 }
 
 loom {
 	splitEnvironmentSourceSets()
+	accessWidenerPath = file("src/main/resources/improved-maps.accesswidener")
 
 	mods {
 		"improved-maps" {
@@ -23,7 +24,6 @@ loom {
 			sourceSet sourceSets.client
 		}
 	}
-
 }
 
 dependencies {
@@ -33,9 +33,9 @@ dependencies {
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
-	modImplementation"eu.pb4:polymer-core:${project.polymer_version}"
-	modImplementation"eu.pb4:polymer-networking:${project.polymer_version}"
-	modImplementation"eu.pb4:polymer-resource-pack:${project.polymer_version}"
+	modImplementation "eu.pb4:polymer-core:${project.polymer_version}"
+	modImplementation "eu.pb4:polymer-networking:${project.polymer_version}"
+	modImplementation "eu.pb4:polymer-resource-pack:${project.polymer_version}"
 	modLocalRuntime "eu.pb4:polymer-autohost:${project.polymer_version}"
 	modImplementation include("xyz.nucleoid:server-translations-api:${project.server_translations_version}")
 }

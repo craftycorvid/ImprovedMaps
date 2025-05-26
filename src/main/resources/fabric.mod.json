@@ -29,6 +29,7 @@
 			"environment": "client"
 		}
 	],
+	"accessWidener": "improved-maps.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.16.13",
 		"minecraft": "~1.21.5",
