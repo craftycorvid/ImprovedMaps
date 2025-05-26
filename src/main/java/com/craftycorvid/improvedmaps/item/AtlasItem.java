@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.math.Fraction;
-import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import eu.pb4.polymer.core.api.item.PolymerItem;
-import eu.pb4.polymer.networking.api.server.PolymerServerNetworking;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.component.DataComponentTypes;
@@ -30,7 +28,6 @@ import net.minecraft.item.map.MapState;
 import net.minecraft.item.tooltip.BundleTooltipData;
 import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.nbt.NbtInt;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -46,6 +43,7 @@ import net.minecraft.world.World;
 import xyz.nucleoid.packettweaker.PacketContext;
 
 import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
+import static com.craftycorvid.improvedmaps.ImprovedMapsNetworking.PLAYERS_WITH_CLIENT;
 
 public class AtlasItem extends BundleItem implements PolymerItem {
     private static final int FULL_ITEM_BAR_COLOR = ColorHelper.fromFloats(1.0F, 1.0F, 0.33F, 0.33F);
@@ -58,8 +56,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     @Override
     public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
         ServerPlayerEntity player = context.getPlayer();
-        if (player != null && player instanceof ServerPlayerEntity && PolymerServerNetworking
-                .getMetadata(player.networkHandler, ImprovedMaps.HELLO_PACKET, NbtInt.TYPE) != null)
+        if (player == null || PLAYERS_WITH_CLIENT.contains(player.getUuid()))
             return this;
         else
             return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;

@@ -29,6 +29,7 @@ public final class ImprovedMaps implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Improved Maps Initializing");
 
+		ImprovedMapsNetworking.initialize();
 		ImprovedMapsItems.initialize();
 		ImprovedMapsComponentTypes.initialize();
 		ImprovedMapsModifyVanillaItems.initialize();
