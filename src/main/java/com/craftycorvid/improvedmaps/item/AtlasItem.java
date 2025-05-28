@@ -126,6 +126,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     @Override
     public boolean onStackClicked(ItemStack atlas, Slot slot, ClickType clickType,
             PlayerEntity player) {
+        if(player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
+            return false;
         if (atlas.getCount() > 1)
             return false;
 
@@ -182,6 +184,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     @Override
     public boolean onClicked(ItemStack atlas, ItemStack otherStack, Slot slot, ClickType clickType,
             PlayerEntity player, StackReference cursorStackReference) {
+        if(player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
+            return false;
         if (atlas.getCount() > 1)
             return false;
         if (clickType == ClickType.LEFT && otherStack.isEmpty()) {

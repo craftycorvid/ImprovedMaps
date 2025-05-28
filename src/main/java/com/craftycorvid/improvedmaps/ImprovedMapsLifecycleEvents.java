@@ -39,8 +39,43 @@ public final class ImprovedMapsLifecycleEvents {
         }
     }
 
-    public static void AtlasPlayerHandTick(ServerPlayerEntity player, ItemStack atlas,
-            EquipmentSlot slot) {
+    public static void initializeEmptyAtlas(ServerPlayerEntity player, ItemStack atlas){
+        Boolean initialized = atlas.get(ImprovedMapsComponentTypes.ATLAS_INITIALIZED);
+        if (initialized == null || !initialized) {
+
+            atlas.set(ImprovedMapsComponentTypes.ATLAS_INITIALIZED, true);
+
+            BundleContentsComponent contents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
+            if (contents.isEmpty()) {
+                BundleContentsComponent.Builder builder = new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
+                ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+
+                int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
+
+                if (emptyCount > 0 || player.isCreative()) {
+                    ItemStack newMap = FilledMapItem.createMap(
+                            (ServerWorld) player.getWorld(),
+                            MathHelper.floor(player.getX()),
+                            MathHelper.floor(player.getZ()),
+                            atlas.get(ImprovedMapsComponentTypes.ATLAS_SCALE),
+                            true,
+                            false
+                    );
+
+                    builder.add(newMap);
+                    atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
+
+                    if (!player.isCreative()) {
+                        atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
+                    }
+                }
+            }
+        }
+    }
+
+    public static void AtlasPlayerHandTick(ServerPlayerEntity player, ItemStack atlas, EquipmentSlot slot) {
+        initializeEmptyAtlas(player, atlas);
+
         World world = player.getWorld();
         List<ItemStack> currentDimMapItemStacks = getCurrentDimMapsFromAtlas(world, atlas);
         ItemStack mapStack = getActiveAtlasMap(currentDimMapItemStacks, player);
@@ -51,7 +86,7 @@ public final class ImprovedMapsLifecycleEvents {
         // Create new Map entries
         if (isPlayerOutsideAllMapRegions(activeState, player)
                 && atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "")
-                        .equals(world.getRegistryKey().getValue().toString())) {
+                .equals(world.getRegistryKey().getValue().toString())) {
             ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
                     MathHelper.floor(player.getX()), MathHelper.floor(player.getZ()));
             if (newMap != null)
