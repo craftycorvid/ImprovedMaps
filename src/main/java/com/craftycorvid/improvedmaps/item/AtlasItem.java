@@ -29,6 +29,7 @@ import net.minecraft.item.tooltip.BundleTooltipData;
 import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -126,7 +127,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     @Override
     public boolean onStackClicked(ItemStack atlas, Slot slot, ClickType clickType,
             PlayerEntity player) {
-        if(player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
+        if (player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
             return false;
         if (atlas.getCount() > 1)
             return false;
@@ -184,7 +185,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     @Override
     public boolean onClicked(ItemStack atlas, ItemStack otherStack, Slot slot, ClickType clickType,
             PlayerEntity player, StackReference cursorStackReference) {
-        if(player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
+        if (player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
             return false;
         if (atlas.getCount() > 1)
             return false;
