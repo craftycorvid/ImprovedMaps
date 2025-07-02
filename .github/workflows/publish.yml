@@ -2,11 +2,10 @@ name: Publish on GitHub & Modrinth
 on: [ workflow_dispatch ]
 
 env:                                              
-  VERSION: 0.4.3
-  RELEASE_NAME: Improved Maps 0.4.3 for Minecraft 1.21.6
+  VERSION: 0.4.4
+  RELEASE_NAME: Improved Maps 0.4.4 for Minecraft 1.21.6 + 1.21.7
   CHANGE_LOG: |
-    - Creative mode bug and crash fixes
-    - Added correct client-side rendering of Atlas bundle UI
+    - Bump server-translations version
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}           
 
@@ -37,7 +36,7 @@ jobs:
           changelog: "${{env.CHANGE_LOG}}"
           dependencies: |
             fabric-api
-            polymer
+            polymer(optional)
             modmenu(optional)
 
           loaders: fabric
