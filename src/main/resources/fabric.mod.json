@@ -8,8 +8,8 @@
 		"CraftyCorvid"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/craftycorvid/ImprovedMaps",
+		"issues": "https://github.com/craftycorvid/ImprovedMaps/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/improved-maps/icon.png",
