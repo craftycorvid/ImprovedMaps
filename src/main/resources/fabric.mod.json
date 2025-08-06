@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"com.craftycorvid.improvedmaps.ImprovedMapsClient"
+		],
+		"modmenu": [
+			"com.craftycorvid.improvedmaps.config.ModMenuIntegration"
 		]
 	},
 	"mixins": [
@@ -37,7 +40,8 @@
 		"fabric-api": "*",
 		"polymer-core": "*",
 		"polymer-resource-pack": "*",
-		"polymer-networking": "*"
+		"polymer-networking": "*",
+		"midnightlib": ">=1.6.0"
 	},
 	"suggest": {
 		"modmenu": "*",

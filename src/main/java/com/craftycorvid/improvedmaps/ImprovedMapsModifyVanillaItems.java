@@ -1,6 +1,7 @@
 package com.craftycorvid.improvedmaps;
 
 import java.util.List;
+import com.craftycorvid.improvedmaps.config.ImprovedMapsConfig;
 import com.google.common.collect.Lists;
 import eu.pb4.polymer.core.api.item.PolymerItemUtils;
 import net.minecraft.component.ComponentMap;
@@ -23,7 +24,7 @@ public final class ImprovedMapsModifyVanillaItems {
 
         PolymerItemUtils.ITEM_MODIFICATION_EVENT.register((original, client, context) -> {
             // Add extra tooltip lines to filled maps
-            if (original.isOf(Items.FILLED_MAP)) {
+            if (original.isOf(Items.FILLED_MAP) && !ImprovedMapsConfig.disableVanillaMapTooltips) {
                 ItemStack out = original.copy();
                 List<Text> loreTexts = Lists.newArrayList();
                 if (context.getPlayer() == null) {

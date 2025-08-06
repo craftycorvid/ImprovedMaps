@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.math.Fraction;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
+import com.craftycorvid.improvedmaps.config.ImprovedMapsConfig;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import eu.pb4.polymer.core.api.item.PolymerItem;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
@@ -98,7 +99,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         Integer empty_maps =
                 stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
-        tooltip.add(Text.literal(filled_maps + "/512 Filled Maps").formatted(Formatting.GRAY));
+        tooltip.add(Text.literal(filled_maps + "/" + ImprovedMapsConfig.atlasMapCapacity + " Filled Maps").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(empty_maps + " Empty Maps").formatted(Formatting.GRAY));
         if (dimension != null)
             tooltip.add(
@@ -140,7 +141,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         ItemStack itemStack = slot.getStack();
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(bundleContentsComponent);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(ImprovedMapsConfig.atlasMapCapacity);
         if (clickType == ClickType.LEFT && !itemStack.isEmpty()) {
             if (itemStack.isOf(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, itemStack, clickType);
@@ -201,7 +202,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(bundleContentsComponent);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(ImprovedMapsConfig.atlasMapCapacity);
         if (clickType == ClickType.LEFT && !otherStack.isEmpty()) {
             if (otherStack.isOf(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, otherStack, clickType);
@@ -299,7 +300,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         int usedSpace = MathHelper.multiplyFraction(stack
                 .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
                 .getOccupancy(), 64);
-        int maxValue = 512;
+        int maxValue = ImprovedMapsConfig.atlasMapCapacity;
 
         return usedSpace * 1f / maxValue;
     }
@@ -319,7 +320,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             int usedSpace = MathHelper
                     .multiplyFraction(stack.getOrDefault(DataComponentTypes.BUNDLE_CONTENTS,
                             BundleContentsComponent.DEFAULT).getOccupancy(), 64);
-            int maxValue = 512;
+            int maxValue = ImprovedMapsConfig.atlasMapCapacity;
 
             BundleContentsComponent bundleContents = stack.getOrDefault(
                     DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
@@ -343,7 +344,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         int usedSpace = MathHelper.multiplyFraction(stack
                 .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
                 .getOccupancy(), 64);
-        int maxValue = 512;
+        int maxValue = ImprovedMapsConfig.atlasMapCapacity;
 
         return (int) Math.clamp(Math.floor(13f * usedSpace / maxValue), 1, 13);
     }
@@ -353,7 +354,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         int usedSpace = MathHelper.multiplyFraction(stack
                 .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
                 .getOccupancy(), 64);
-        int maxValue = 512;
+        int maxValue = ImprovedMapsConfig.atlasMapCapacity;
 
         if (usedSpace >= maxValue) {
             return FULL_ITEM_BAR_COLOR;

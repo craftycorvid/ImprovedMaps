@@ -8,6 +8,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.craftycorvid.improvedmaps.config.ImprovedMapsConfig;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.craftycorvid.improvedmaps.recipe.AtlasCopyRecipe;
 import com.craftycorvid.improvedmaps.recipe.AtlasRecipe;
@@ -28,6 +29,9 @@ public final class ImprovedMaps implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Improved Maps Initializing");
+
+		// Initialize config
+		ImprovedMapsConfig.init(MOD_ID, ImprovedMapsConfig.class);
 
 		ImprovedMapsNetworking.initialize();
 		ImprovedMapsItems.initialize();

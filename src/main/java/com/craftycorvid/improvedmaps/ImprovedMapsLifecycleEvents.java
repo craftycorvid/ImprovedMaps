@@ -3,6 +3,7 @@ package com.craftycorvid.improvedmaps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import com.craftycorvid.improvedmaps.config.ImprovedMapsConfig;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import net.minecraft.component.DataComponentTypes;
@@ -36,6 +37,17 @@ public final class ImprovedMapsLifecycleEvents {
             ItemStack offHand = player.getStackInHand(Hand.OFF_HAND);
             if (offHand.isOf(ImprovedMapsItems.ATLAS))
                 AtlasPlayerHandTick(player, offHand, EquipmentSlot.OFFHAND);
+            
+            // Check for atlases in inventory if config option is enabled
+            if (ImprovedMapsConfig.updateAtlasWhenNotInHand) {
+                for (int i = 0; i < player.getInventory().size(); i++) {
+                    ItemStack stack = player.getInventory().getStack(i);
+                    if (stack.isOf(ImprovedMapsItems.ATLAS) && 
+                        !stack.equals(mainHand) && !stack.equals(offHand)) {
+                        AtlasPlayerHandTick(player, stack, EquipmentSlot.MAINHAND);
+                    }
+                }
+            }
         }
     }
 
@@ -48,7 +60,7 @@ public final class ImprovedMapsLifecycleEvents {
             BundleContentsComponent contents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
             if (contents.isEmpty()) {
                 BundleContentsComponent.Builder builder = new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
-                ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+                ((ICustomBundleContentBuilder) builder).setMaxSize(ImprovedMapsConfig.atlasMapCapacity);
 
                 int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
 
@@ -157,7 +169,7 @@ public final class ImprovedMapsLifecycleEvents {
                 .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
         BundleContentsComponent.Builder builder =
                 new BundleContentsComponent.Builder(bundleContents);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(ImprovedMapsConfig.atlasMapCapacity);
         int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
             try {

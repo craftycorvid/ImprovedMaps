@@ -12,6 +12,7 @@ base {
 repositories {
 	maven { url = "https://maven.terraformersmc.com" }
 	maven { url = 'https://maven.nucleoid.xyz' }
+	maven { url = 'https://jitpack.io' }
 }
 
 loom {
@@ -38,6 +39,7 @@ dependencies {
 	modImplementation "eu.pb4:polymer-resource-pack:${project.polymer_version}"
 	modLocalRuntime "eu.pb4:polymer-autohost:${project.polymer_version}"
 	modImplementation include("xyz.nucleoid:server-translations-api:${project.server_translations_version}")
+	modImplementation include("eu.midnightdust:midnightlib:${project.midnightlib_version}")
 }
 
 processResources {
