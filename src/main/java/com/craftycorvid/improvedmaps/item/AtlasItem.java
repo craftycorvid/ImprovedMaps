@@ -148,7 +148,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 String dimension =
                         atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
                 Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) -1);
-                MapState mapState = FilledMapItem.getMapState(itemStack, player.getWorld());
+                MapState mapState = FilledMapItem.getMapState(itemStack, player.getEntityWorld());
 
                 if (mapState.scale != scale
                         || !mapState.dimension.getValue().toString().equals(dimension))
@@ -209,7 +209,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 String dimension =
                         atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
                 Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) 0);
-                MapState mapState = FilledMapItem.getMapState(otherStack, player.getWorld());
+                MapState mapState = FilledMapItem.getMapState(otherStack, player.getEntityWorld());
 
                 if (mapState.scale != scale
                         || !mapState.dimension.getValue().toString().equals(dimension)) {
@@ -265,7 +265,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         BlockState blockState = context.getWorld().getBlockState(context.getBlockPos());
         if (blockState.isIn(BlockTags.BANNERS)) {
             World world = context.getWorld();
-            if (!world.isClient) {
+            if (world instanceof net.minecraft.server.world.ServerWorld) {
                 MapIdComponent mapIdComponent = context.getStack().get(DataComponentTypes.MAP_ID);
                 MapState mapState = world.getMapState(mapIdComponent);
                 if (mapState != null

@@ -10,14 +10,14 @@ import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.map.MapState;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.World;
 
 public final class ImprovedMapsModifyVanillaItems {
     public static void initialize() {
-        PolymerItemUtils.ITEM_CHECK.register((itemStack) -> {
+        PolymerItemUtils.CONTEXT_ITEM_CHECK.register((itemStack, context) -> {
             return itemStack.isOf(Items.FILLED_MAP);
         });
 
@@ -29,7 +29,7 @@ public final class ImprovedMapsModifyVanillaItems {
                 if (context.getPlayer() == null) {
                     return client;
                 }
-                World world = context.getPlayer().getWorld();
+                ServerWorld world = context.getPlayer().getEntityWorld();
                 MapState mapState = FilledMapItem.getMapState(out, world);
 
                 if (mapState != null) {
