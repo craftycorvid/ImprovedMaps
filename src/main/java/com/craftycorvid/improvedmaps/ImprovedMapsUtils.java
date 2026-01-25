@@ -1,8 +1,8 @@
 package com.craftycorvid.improvedmaps;
 
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.BundleContentsComponent;
-import net.minecraft.item.ItemStack;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BundleContents;
 
 public class ImprovedMapsUtils {
     public static String scaleToString(int scale) {
@@ -37,7 +37,7 @@ public class ImprovedMapsUtils {
 
     public static ItemStack copyAtlas(ItemStack originalAtlas) {
         int originalAtlasFilledMapCount = originalAtlas
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
                 .size();
         int emptyMapCount =
                 originalAtlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);

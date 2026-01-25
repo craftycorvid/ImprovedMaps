@@ -5,19 +5,19 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.BundleContentsComponent;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.map.MapState;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 // Logic based on
 // https://github.com/Pepperoni-Jabroni/MapAtlases/blob/main/src/main/java/pepjebs/mapatlases/lifecycle/MapAtlasesServerLifecycleEvents.java
@@ -26,39 +26,39 @@ public final class ImprovedMapsLifecycleEvents {
     private static final Semaphore mutex = new Semaphore(1);
 
     public static void ImprovedMapsServerTick(MinecraftServer server) {
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.isRemoved() || player.isInTeleportationState() || player.isDisconnected())
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.isRemoved() || player.isChangingDimension() || player.hasDisconnected())
                 continue;
-            ItemStack mainHand = player.getStackInHand(Hand.MAIN_HAND);
-            if (mainHand.isOf(ImprovedMapsItems.ATLAS))
+            ItemStack mainHand = player.getItemInHand(InteractionHand.MAIN_HAND);
+            if (mainHand.is(ImprovedMapsItems.ATLAS))
                 AtlasPlayerHandTick(player, mainHand, EquipmentSlot.MAINHAND);
-            ItemStack offHand = player.getStackInHand(Hand.OFF_HAND);
-            if (offHand.isOf(ImprovedMapsItems.ATLAS))
+            ItemStack offHand = player.getItemInHand(InteractionHand.OFF_HAND);
+            if (offHand.is(ImprovedMapsItems.ATLAS))
                 AtlasPlayerHandTick(player, offHand, EquipmentSlot.OFFHAND);
         }
     }
 
-    public static void initializeEmptyAtlas(ServerPlayerEntity player, ItemStack atlas) {
+    public static void initializeEmptyAtlas(ServerPlayer player, ItemStack atlas) {
         Boolean initialized = atlas.get(ImprovedMapsComponentTypes.ATLAS_INITIALIZED);
         if (initialized == null || !initialized) {
 
             atlas.set(ImprovedMapsComponentTypes.ATLAS_INITIALIZED, true);
 
-            BundleContentsComponent contents = atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
+            BundleContents contents = atlas.get(DataComponents.BUNDLE_CONTENTS);
             if (contents.isEmpty()) {
-                BundleContentsComponent.Builder builder =
-                        new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
+                BundleContents.Mutable builder =
+                        new BundleContents.Mutable(BundleContents.EMPTY);
                 ((ICustomBundleContentBuilder) builder).setMaxSize(512);
 
                 int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
 
                 if (emptyCount > 0 || player.isCreative()) {
-                    ItemStack newMap = FilledMapItem.createMap(player.getEntityWorld(),
-                            MathHelper.floor(player.getX()), MathHelper.floor(player.getZ()),
+                    ItemStack newMap = MapItem.create(player.level(),
+                            Mth.floor(player.getX()), Mth.floor(player.getZ()),
                             atlas.get(ImprovedMapsComponentTypes.ATLAS_SCALE), true, false);
 
-                    builder.add(newMap);
-                    atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
+                    builder.tryInsert(newMap);
+                    atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
 
                     if (!player.isCreative()) {
                         atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
@@ -68,63 +68,63 @@ public final class ImprovedMapsLifecycleEvents {
         }
     }
 
-    public static void AtlasPlayerHandTick(ServerPlayerEntity player, ItemStack atlas,
+    public static void AtlasPlayerHandTick(ServerPlayer player, ItemStack atlas,
             EquipmentSlot slot) {
         initializeEmptyAtlas(player, atlas);
 
-        ServerWorld world = player.getEntityWorld();
+        ServerLevel world = player.level();
         List<ItemStack> currentDimMapItemStacks = getCurrentDimMapsFromAtlas(world, atlas);
         ItemStack mapStack = getActiveAtlasMap(currentDimMapItemStacks, player);
         if (mapStack == null)
             return;
 
-        MapState activeState = FilledMapItem.getMapState(mapStack, world);
+        MapItemSavedData activeState = MapItem.getSavedData(mapStack, world);
         // Create new Map entries
         if (isPlayerOutsideAllMapRegions(activeState, player)
                 && atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "")
-                        .equals(world.getRegistryKey().getValue().toString())) {
+                        .equals(world.dimension().location().toString())) {
             ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
-                    MathHelper.floor(player.getX()), MathHelper.floor(player.getZ()));
+                    Mth.floor(player.getX()), Mth.floor(player.getZ()));
             if (newMap != null)
                 mapStack = newMap;
         }
 
-        if (mapStack.isOf(Items.FILLED_MAP)) {
-            atlas.set(DataComponentTypes.MAP_ID, mapStack.get(DataComponentTypes.MAP_ID));
+        if (mapStack.is(Items.FILLED_MAP)) {
+            atlas.set(DataComponents.MAP_ID, mapStack.get(DataComponents.MAP_ID));
             mapStack.inventoryTick(world, player, slot);
         }
     }
 
-    private static boolean isPlayerOutsideAllMapRegions(MapState activeState, PlayerEntity player) {
+    private static boolean isPlayerOutsideAllMapRegions(MapItemSavedData activeState, Player player) {
         byte scale = activeState.scale;
         int scaleWidthFromCenter = ((1 << scale) * 64) + 8;
         return Math.abs(activeState.centerX - player.getX()) > scaleWidthFromCenter
                 || Math.abs(activeState.centerZ - player.getZ()) > scaleWidthFromCenter;
     }
 
-    public static List<ItemStack> getAllMapsFromAtlas(ServerWorld world, ItemStack atlas) {
-        BundleContentsComponent bundleContents = atlas
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
+    public static List<ItemStack> getAllMapsFromAtlas(ServerLevel world, ItemStack atlas) {
+        BundleContents bundleContents = atlas
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         List<ItemStack> mapStacks = new ArrayList<>();
-        bundleContents.iterate().forEach((map) -> {
-            if (!map.isEmpty() && map.isOf(Items.FILLED_MAP))
+        bundleContents.items().forEach((map) -> {
+            if (!map.isEmpty() && map.is(Items.FILLED_MAP))
                 mapStacks.add(map);
         });
         return mapStacks;
     }
 
-    public static List<ItemStack> getCurrentDimMapsFromAtlas(ServerWorld world, ItemStack atlas) {
+    public static List<ItemStack> getCurrentDimMapsFromAtlas(ServerLevel world, ItemStack atlas) {
         return getAllMapsFromAtlas(world, atlas).stream().filter(map -> {
-            MapState mapState = FilledMapItem.getMapState(map, world);
+            MapItemSavedData mapState = MapItem.getSavedData(map, world);
             return mapState != null
-                    ? mapState.dimension.getValue()
-                            .compareTo(world.getRegistryKey().getValue()) == 0
+                    ? mapState.dimension.location()
+                            .compareTo(world.dimension().location()) == 0
                     : false;
         }).toList();
     }
 
     public static ItemStack getActiveAtlasMap(List<ItemStack> currentDimMapItemStacks,
-            ServerPlayerEntity player) {
+            ServerPlayer player) {
         ItemStack minDistStack = null;
         for (ItemStack stack : currentDimMapItemStacks) {
             if (minDistStack == null) {
@@ -132,9 +132,9 @@ public final class ImprovedMapsLifecycleEvents {
                 continue;
             }
             double previous = distanceBetweenMapStateAndPlayer(
-                    FilledMapItem.getMapState(minDistStack, player.getEntityWorld()), player);
+                    MapItem.getSavedData(minDistStack, player.level()), player);
             double current = distanceBetweenMapStateAndPlayer(
-                    FilledMapItem.getMapState(stack, player.getEntityWorld()), player);
+                    MapItem.getSavedData(stack, player.level()), player);
             if (current < previous) {
                 minDistStack = stack;
             }
@@ -142,17 +142,17 @@ public final class ImprovedMapsLifecycleEvents {
         return minDistStack;
     }
 
-    public static double distanceBetweenMapStateAndPlayer(MapState mapState, PlayerEntity player) {
+    public static double distanceBetweenMapStateAndPlayer(MapItemSavedData mapState, Player player) {
         return Math.hypot(Math.abs(mapState.centerX - player.getX()),
                 Math.abs(mapState.centerZ - player.getZ()));
     }
 
-    private static ItemStack maybeCreateNewMapEntry(ServerPlayerEntity player, ItemStack atlas,
-            MapState activeState, int playerX, int playerZ) {
-        BundleContentsComponent bundleContents = atlas
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
-        BundleContentsComponent.Builder builder =
-                new BundleContentsComponent.Builder(bundleContents);
+    private static ItemStack maybeCreateNewMapEntry(ServerPlayer player, ItemStack atlas,
+            MapItemSavedData activeState, int playerX, int playerZ) {
+        BundleContents bundleContents = atlas
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
+        BundleContents.Mutable builder =
+                new BundleContents.Mutable(bundleContents);
         ((ICustomBundleContentBuilder) builder).setMaxSize(512);
         int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
@@ -171,10 +171,10 @@ public final class ImprovedMapsLifecycleEvents {
                         : currentZ;
 
                 // Make the new map
-                ItemStack newMap = FilledMapItem.createMap(player.getEntityWorld(), newX, newZ,
+                ItemStack newMap = MapItem.create(player.level(), newX, newZ,
                         (byte) scale, true, false);
-                builder.add(newMap);
-                atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
+                builder.tryInsert(newMap);
+                atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
                 if (!player.isCreative())
                     atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
                 return newMap;

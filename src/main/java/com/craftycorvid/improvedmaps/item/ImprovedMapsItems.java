@@ -1,28 +1,27 @@
 package com.craftycorvid.improvedmaps.item;
 
 import java.util.function.Function;
-
+import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BundleContents;
 import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.BundleContentsComponent;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
 
 public class ImprovedMapsItems {
-        public static final Item ATLAS = register("atlas", AtlasItem::new, (new Item.Settings())
-                        .maxCount(1)
-                        .component(DataComponentTypes.BUNDLE_CONTENTS,
-                                        BundleContentsComponent.DEFAULT)
+        public static final Item ATLAS = register("atlas", AtlasItem::new, (new Item.Properties())
+                        .stacksTo(1)
+                        .component(DataComponents.BUNDLE_CONTENTS,
+                                        BundleContents.EMPTY)
                         .component(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
                                         "minecraft:overworld")
                         .component(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) 0)
@@ -38,25 +37,25 @@ public class ImprovedMapsItems {
                 return itemStack;
         }
 
-        public static final ItemGroup IMPROVED_MAPS_GROUP = Registry.register(Registries.ITEM_GROUP,
-                        Identifier.of(ImprovedMaps.MOD_ID, "atlas_tab"),
-                        new ItemGroup.Builder(ItemGroup.Row.TOP, 0) // TOP row, first column
-                                        .displayName(Text.translatable("itemGroup."
+        public static final CreativeModeTab IMPROVED_MAPS_GROUP = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB,
+                        ResourceLocation.fromNamespaceAndPath(ImprovedMaps.MOD_ID, "atlas_tab"),
+                        new CreativeModeTab.Builder(CreativeModeTab.Row.TOP, 0) // TOP row, first column
+                                        .title(Component.translatable("itemGroup."
                                                         + ImprovedMaps.MOD_ID + ".atlas_tab"))
                                         .icon(() -> new ItemStack(ImprovedMapsItems.ATLAS))
-                                        .entries((context, entries) -> {
+                                        .displayItems((context, entries) -> {
                                                 for (int scale = 0; scale <= 4; scale++) {
-                                                        entries.add(getAtlasWith(
+                                                        entries.accept(getAtlasWith(
                                                                         "minecraft:overworld",
                                                                         (byte) scale));
                                                 }
                                                 for (int scale = 0; scale <= 4; scale++) {
-                                                        entries.add(getAtlasWith(
+                                                        entries.accept(getAtlasWith(
                                                                         "minecraft:the_nether",
                                                                         (byte) scale));
                                                 }
                                                 for (int scale = 0; scale <= 4; scale++) {
-                                                        entries.add(getAtlasWith(
+                                                        entries.accept(getAtlasWith(
                                                                         "minecraft:the_end",
                                                                         (byte) scale));
                                                 }
@@ -67,11 +66,11 @@ public class ImprovedMapsItems {
 
         }
 
-        public static Item register(String name, Function<Item.Settings, Item> itemFactory,
-                        Item.Settings settings) {
-                RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, id(name));
-                Item item = itemFactory.apply(settings.registryKey(itemKey));
-                Registry.register(Registries.ITEM, itemKey, item);
+        public static Item register(String name, Function<Item.Properties, Item> itemFactory,
+                        Item.Properties settings) {
+                ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, id(name));
+                Item item = itemFactory.apply(settings.setId(itemKey));
+                Registry.register(BuiltInRegistries.ITEM, itemKey, item);
                 return item;
         }
 }

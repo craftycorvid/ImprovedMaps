@@ -1,81 +1,80 @@
 package com.craftycorvid.improvedmaps.recipe;
 
 import java.util.List;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.RecipeBookCategories;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import eu.pb4.polymer.core.api.utils.PolymerObject;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.BundleContentsComponent;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.map.MapState;
-import net.minecraft.recipe.SpecialCraftingRecipe;
-import net.minecraft.recipe.book.CraftingRecipeCategory;
-import net.minecraft.recipe.book.RecipeBookCategories;
-import net.minecraft.recipe.book.RecipeBookCategory;
-import net.minecraft.recipe.input.CraftingRecipeInput;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.world.World;
 
-public class AtlasRecipe extends SpecialCraftingRecipe {
-    public AtlasRecipe(CraftingRecipeCategory category) {
+public class AtlasRecipe extends CustomRecipe {
+    public AtlasRecipe(CraftingBookCategory category) {
         super(category);
     }
 
     @Override
-    public boolean matches(CraftingRecipeInput inventory, World world) {
-        List<ItemStack> itemStacks = inventory.getStacks();
+    public boolean matches(CraftingInput inventory, Level world) {
+        List<ItemStack> itemStacks = inventory.items();
         ItemStack filledMap = ItemStack.EMPTY;
         Boolean hasBook = false;
         for (ItemStack stack : itemStacks) {
-            if (stack.isOf(Items.FILLED_MAP)) {
+            if (stack.is(Items.FILLED_MAP)) {
                 filledMap = stack;
-            } else if (stack.isOf(Items.BOOK)) {
+            } else if (stack.is(Items.BOOK)) {
                 hasBook = true;
             }
         }
         if (itemStacks.size() == 2 && hasBook && !filledMap.isEmpty()) {
-            MapState state = FilledMapItem.getMapState(filledMap, world);
+            MapItemSavedData state = MapItem.getSavedData(filledMap, world);
             return state != null;
         }
         return false;
     }
 
     @Override
-    public ItemStack craft(CraftingRecipeInput inventory, RegistryWrapper.WrapperLookup lookup) {
+    public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider lookup) {
         ItemStack atlas = new ItemStack(ImprovedMapsItems.ATLAS);
-        ItemStack map = inventory.getStacks().stream().filter(stack -> stack.isOf(Items.FILLED_MAP))
+        ItemStack map = inventory.items().stream().filter(stack -> stack.is(Items.FILLED_MAP))
                 .findFirst().orElse(null);
 
-        BundleContentsComponent.Builder builder =
-                new BundleContentsComponent.Builder(BundleContentsComponent.DEFAULT);
+        BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
         ((ICustomBundleContentBuilder) builder).setMaxSize(512);
-        builder.add(map);
-        map.increment(1);
-        atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
+        builder.tryInsert(map);
+        map.grow(1);
+        atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
         atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
 
         return atlas;
     }
 
     @Override
-    public SpecialRecipeSerializer<AtlasRecipe> getSerializer() {
+    public net.minecraft.world.item.crafting.CustomRecipe.Serializer<AtlasRecipe> getSerializer() {
         return ImprovedMaps.ATLAS_RECIPE_SERIALIZER;
     }
 
     @Override
-    public RecipeBookCategory getRecipeBookCategory() {
+    public RecipeBookCategory recipeBookCategory() {
         return RecipeBookCategories.CRAFTING_EQUIPMENT;
     }
 
-    public static class Serializer extends SpecialRecipeSerializer<AtlasRecipe>
+    public static class Serializer extends net.minecraft.world.item.crafting.CustomRecipe.Serializer<AtlasRecipe>
             implements PolymerObject {
 
         public Serializer(
-                SpecialCraftingRecipe.SpecialRecipeSerializer.Factory<AtlasRecipe> factory) {
+                CustomRecipe.Serializer.Factory<AtlasRecipe> factory) {
             super(factory);
         }
     }

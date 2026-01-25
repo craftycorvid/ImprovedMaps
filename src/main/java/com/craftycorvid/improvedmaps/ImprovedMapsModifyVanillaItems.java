@@ -1,53 +1,53 @@
 package com.craftycorvid.improvedmaps;
 
 import java.util.List;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import com.google.common.collect.Lists;
 import eu.pb4.polymer.core.api.item.PolymerItemUtils;
-import net.minecraft.component.ComponentMap;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.map.MapState;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 
 public final class ImprovedMapsModifyVanillaItems {
     public static void initialize() {
         PolymerItemUtils.CONTEXT_ITEM_CHECK.register((itemStack, context) -> {
-            return itemStack.isOf(Items.FILLED_MAP);
+            return itemStack.is(Items.FILLED_MAP);
         });
 
         PolymerItemUtils.ITEM_MODIFICATION_EVENT.register((original, client, context) -> {
             // Add extra tooltip lines to filled maps
-            if (original.isOf(Items.FILLED_MAP)) {
+            if (original.is(Items.FILLED_MAP)) {
                 ItemStack out = original.copy();
-                List<Text> loreTexts = Lists.newArrayList();
+                List<Component> loreTexts = Lists.newArrayList();
                 if (context.getPlayer() == null) {
                     return client;
                 }
-                ServerWorld world = context.getPlayer().getEntityWorld();
-                MapState mapState = FilledMapItem.getMapState(out, world);
+                ServerLevel world = context.getPlayer().level();
+                MapItemSavedData mapState = MapItem.getSavedData(out, world);
 
                 if (mapState != null) {
-                    loreTexts.add(Text
+                    loreTexts.add(Component
                             .literal("Dimension " + ImprovedMapsUtils.formatDimensionString(
-                                    mapState.dimension.getValue().toString()))
-                            .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
-                    loreTexts.add(Text
+                                    mapState.dimension.location().toString()))
+                            .setStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)));
+                    loreTexts.add(Component
                             .literal("Center " + mapState.centerX + ", " + mapState.centerZ)
-                            .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
-                    loreTexts.add(Text
+                            .setStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)));
+                    loreTexts.add(Component
                             .literal("Scale "
                                     + ImprovedMapsUtils.scaleToString((int) mapState.scale))
-                            .setStyle(Style.EMPTY.withItalic(false).withColor(Formatting.GRAY)));
+                            .setStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)));
 
-                    var loreComponent = new LoreComponent(loreTexts);
-                    out.applyComponentsFrom(ComponentMap.builder()
-                            .add(DataComponentTypes.LORE, loreComponent).build());
+                    var loreComponent = new ItemLore(loreTexts);
+                    out.applyComponents(DataComponentMap.builder()
+                            .set(DataComponents.LORE, loreComponent).build());
 
                     return out;
                 }

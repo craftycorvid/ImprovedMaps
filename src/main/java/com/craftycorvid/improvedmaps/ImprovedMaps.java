@@ -2,10 +2,10 @@ package com.craftycorvid.improvedmaps;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.recipe.SpecialCraftingRecipe.SpecialRecipeSerializer;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.CustomRecipe.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
@@ -16,13 +16,13 @@ import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 public final class ImprovedMaps implements ModInitializer {
 	public static final String MOD_ID = "improved-maps";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public static final Identifier HELLO_PACKET = id("hello");
+	public static final ResourceLocation HELLO_PACKET = id("hello");
 
-	public static SpecialRecipeSerializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
-	public static SpecialRecipeSerializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
+	public static Serializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
+	public static Serializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
 
-	public static Identifier id(String path) {
-		return Identifier.of(MOD_ID, path);
+	public static ResourceLocation id(String path) {
+		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
 	}
 
 	@Override
@@ -35,9 +35,9 @@ public final class ImprovedMaps implements ModInitializer {
 		ImprovedMapsModifyVanillaItems.initialize();
 		PolymerResourcePackUtils.addModAssets(MOD_ID);
 
-		ATLAS_RECIPE_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER,
+		ATLAS_RECIPE_SERIALIZER = Registry.register(BuiltInRegistries.RECIPE_SERIALIZER,
 				id("crafting_atlas"), new AtlasRecipe.Serializer(AtlasRecipe::new));
-		ATLAS_COPY_RECIPE_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER,
+		ATLAS_COPY_RECIPE_SERIALIZER = Registry.register(BuiltInRegistries.RECIPE_SERIALIZER,
 				id("copy_atlas"), new AtlasCopyRecipe.Serializer(AtlasCopyRecipe::new));
 		ServerTickEvents.START_SERVER_TICK
 				.register(ImprovedMapsLifecycleEvents::ImprovedMapsServerTick);

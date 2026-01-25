@@ -1,34 +1,34 @@
 package com.craftycorvid.improvedmaps.recipe;
 
 import java.util.List;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.RecipeBookCategories;
+import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.level.Level;
 import com.craftycorvid.improvedmaps.ImprovedMaps;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import eu.pb4.polymer.core.api.utils.PolymerObject;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.recipe.SpecialCraftingRecipe;
-import net.minecraft.recipe.book.CraftingRecipeCategory;
-import net.minecraft.recipe.book.RecipeBookCategories;
-import net.minecraft.recipe.book.RecipeBookCategory;
-import net.minecraft.recipe.input.CraftingRecipeInput;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.world.World;
 
-public class AtlasCopyRecipe extends SpecialCraftingRecipe {
-    public AtlasCopyRecipe(CraftingRecipeCategory category) {
+public class AtlasCopyRecipe extends CustomRecipe {
+    public AtlasCopyRecipe(CraftingBookCategory category) {
         super(category);
     }
 
     @Override
-    public boolean matches(CraftingRecipeInput inventory, World world) {
-        List<ItemStack> itemStacks = inventory.getStacks();
+    public boolean matches(CraftingInput inventory, Level world) {
+        List<ItemStack> itemStacks = inventory.items();
         Boolean hasAtlas = false;
         Boolean hasBook = false;
         for (ItemStack stack : itemStacks) {
-            if (stack.isOf(ImprovedMapsItems.ATLAS)) {
+            if (stack.is(ImprovedMapsItems.ATLAS)) {
                 hasAtlas = true;
-            } else if (stack.isOf(Items.BOOK)) {
+            } else if (stack.is(Items.BOOK)) {
                 hasBook = true;
             }
         }
@@ -39,9 +39,9 @@ public class AtlasCopyRecipe extends SpecialCraftingRecipe {
     }
 
     @Override
-    public ItemStack craft(CraftingRecipeInput inventory, RegistryWrapper.WrapperLookup lookup) {
-        List<ItemStack> atlases = inventory.getStacks().stream()
-                .filter(stack -> stack.isOf(ImprovedMapsItems.ATLAS)).toList();
+    public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider lookup) {
+        List<ItemStack> atlases = inventory.items().stream()
+                .filter(stack -> stack.is(ImprovedMapsItems.ATLAS)).toList();
 
         ItemStack originalAtlas = atlases.getFirst();
         return ImprovedMapsUtils.copyAtlas(originalAtlas);
@@ -49,20 +49,20 @@ public class AtlasCopyRecipe extends SpecialCraftingRecipe {
     }
 
     @Override
-    public SpecialRecipeSerializer<AtlasCopyRecipe> getSerializer() {
+    public net.minecraft.world.item.crafting.CustomRecipe.Serializer<AtlasCopyRecipe> getSerializer() {
         return ImprovedMaps.ATLAS_COPY_RECIPE_SERIALIZER;
     }
 
     @Override
-    public RecipeBookCategory getRecipeBookCategory() {
+    public RecipeBookCategory recipeBookCategory() {
         return RecipeBookCategories.CRAFTING_EQUIPMENT;
     }
 
-    public static class Serializer extends SpecialRecipeSerializer<AtlasCopyRecipe>
+    public static class Serializer extends net.minecraft.world.item.crafting.CustomRecipe.Serializer<AtlasCopyRecipe>
             implements PolymerObject {
 
         public Serializer(
-                SpecialCraftingRecipe.SpecialRecipeSerializer.Factory<AtlasCopyRecipe> factory) {
+                CustomRecipe.Serializer.Factory<AtlasCopyRecipe> factory) {
             super(factory);
         }
     }

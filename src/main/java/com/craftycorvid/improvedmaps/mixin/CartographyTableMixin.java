@@ -12,72 +12,72 @@ import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.CraftingResultInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.CartographyTableScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerContext;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CartographyTableMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-@Mixin(CartographyTableScreenHandler.class)
-public abstract class CartographyTableMixin extends ScreenHandler {
-    protected CartographyTableMixin(ScreenHandlerType<?> type, int syncId) {
+@Mixin(CartographyTableMenu.class)
+public abstract class CartographyTableMixin extends AbstractContainerMenu {
+    protected CartographyTableMixin(MenuType<?> type, int syncId) {
         super(type, syncId);
     }
 
     @Shadow
     @Final
-    private ScreenHandlerContext context;
+    private ContainerLevelAccess access;
 
     @Shadow
     @Final
-    private CraftingResultInventory resultInventory;
+    private ResultContainer resultContainer;
 
     @Shadow
-    private void updateResult(ItemStack map, ItemStack item, ItemStack oldResult) {}
+    private void setupResultSlot(ItemStack map, ItemStack item, ItemStack oldResult) {}
 
-    @Inject(method = "onContentChanged", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/item/ItemStack;isEmpty()Z", ordinal = 0), cancellable = true)
-    private void callUpdateResultOnSingleAtlas(Inventory inventory, CallbackInfo ci,
+    @Inject(method = "slotsChanged", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/item/ItemStack;isEmpty()Z", ordinal = 0), cancellable = true)
+    private void callUpdateResultOnSingleAtlas(Container inventory, CallbackInfo ci,
             @Local(ordinal = 0) ItemStack itemStack, @Local(ordinal = 1) ItemStack itemStack2,
             @Local(ordinal = 2) ItemStack itemStack3) {
-        if (itemStack.isOf(ImprovedMapsItems.ATLAS)) {
-            this.updateResult(itemStack, itemStack2, itemStack3);
+        if (itemStack.is(ImprovedMapsItems.ATLAS)) {
+            this.setupResultSlot(itemStack, itemStack2, itemStack3);
             ci.cancel();
         }
     }
 
-    @Inject(method = "updateResult", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "setupResultSlot", at = @At("HEAD"), cancellable = true)
     private void addAtlasInteractionsToUpdateResult(ItemStack map, ItemStack item,
             ItemStack oldResult, CallbackInfo ci) {
-        if (map.isOf(ImprovedMapsItems.ATLAS)) {
-            this.context.run((world, pos) -> {
-                if (world.isClient())
+        if (map.is(ImprovedMapsItems.ATLAS)) {
+            this.access.execute((world, pos) -> {
+                if (world.isClientSide())
                     return;
 
                 ItemStack newResult = null;
 
-                if (map.isOf(ImprovedMapsItems.ATLAS) && item.isEmpty()) {
+                if (map.is(ImprovedMapsItems.ATLAS) && item.isEmpty()) {
                     Integer empty_maps =
                             map.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                     if (empty_maps > 0) {
                         newResult = new ItemStack(Items.MAP, empty_maps);
-                        this.sendContentUpdates();
+                        this.broadcastChanges();
                     }
-                } else if (map.isOf(ImprovedMapsItems.ATLAS) && item.isOf(Items.BOOK)) {
+                } else if (map.is(ImprovedMapsItems.ATLAS) && item.is(Items.BOOK)) {
                     newResult = ImprovedMapsUtils.copyAtlas(map);
-                    this.sendContentUpdates();
+                    this.broadcastChanges();
                 }
 
-                if (newResult != null && !ItemStack.areEqual(newResult, oldResult)) {
-                    this.resultInventory.setStack(CartographyTableScreenHandler.RESULT_SLOT_INDEX,
+                if (newResult != null && !ItemStack.matches(newResult, oldResult)) {
+                    this.resultContainer.setItem(CartographyTableMenu.RESULT_SLOT,
                             newResult);
-                    this.sendContentUpdates();
+                    this.broadcastChanges();
                 }
             });
 
@@ -86,43 +86,43 @@ public abstract class CartographyTableMixin extends ScreenHandler {
     }
 
     // to access the Cartography Table screen and its data in the ResultSlotMixin
-    @Mixin(ScreenHandler.class)
+    @Mixin(AbstractContainerMenu.class)
     public interface ScreenHandlerAccessor {
         @Accessor
-        DefaultedList<Slot> getSlots();
+        NonNullList<Slot> getSlots();
     }
 
     // target CartographyTableScreenHandler's second slot
-    @Mixin(targets = "net/minecraft/screen/CartographyTableScreenHandler$4")
+    @Mixin(targets = "net/minecraft/world/inventory/CartographyTableMenu$4")
     public static abstract class SecondSlotMixin extends Slot {
-        public SecondSlotMixin(Inventory inventory, int slot, int x, int y) {
+        public SecondSlotMixin(Container inventory, int slot, int x, int y) {
             super(inventory, slot, x, y);
         }
 
         @ModifyReturnValue(method = "canInsert", at = @At("RETURN"))
         private boolean canInsert(boolean original, ItemStack stack) {
-            return original || stack.isOf(Items.BOOK);
+            return original || stack.is(Items.BOOK);
         }
     }
 
     // target CartographyTableScreenHandler's result slot
-    @Mixin(targets = "net/minecraft/screen/CartographyTableScreenHandler$5")
+    @Mixin(targets = "net/minecraft/world/inventory/CartographyTableMenu$5")
     public static abstract class ResultSlotMixin extends Slot {
-        public ResultSlotMixin(Inventory inventory, int slot, int x, int y) {
+        public ResultSlotMixin(Container inventory, int slot, int x, int y) {
             super(inventory, slot, x, y);
         }
 
         @Shadow
         @Final
-        CartographyTableScreenHandler field_17303;
+        CartographyTableMenu field_17303;
 
         @Inject(method = "onTakeItem", at = @At("HEAD"), cancellable = true)
-        public void onTakeItem(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
+        public void onTakeItem(Player player, ItemStack stack, CallbackInfo ci) {
             var slots = ((ScreenHandlerAccessor) field_17303).getSlots();
-            var firstSlot = slots.get(0).getStack();
-            var secondSlot = slots.get(1).getStack();
+            var firstSlot = slots.get(0).getItem();
+            var secondSlot = slots.get(1).getItem();
 
-            if (firstSlot.isOf(ImprovedMapsItems.ATLAS) && secondSlot.isEmpty()) {
+            if (firstSlot.is(ImprovedMapsItems.ATLAS) && secondSlot.isEmpty()) {
                 firstSlot.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                 ci.cancel();
             }

@@ -3,240 +3,231 @@ package com.craftycorvid.improvedmaps.item;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.SlotAccess;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickAction;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.tooltip.BundleTooltip;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
+import net.minecraft.world.item.BundleItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.CustomModelData;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.apache.commons.lang3.math.Fraction;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import eu.pb4.polymer.core.api.item.PolymerItem;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
-import net.minecraft.block.BlockState;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.BundleContentsComponent;
-import net.minecraft.component.type.CustomModelDataComponent;
-import net.minecraft.component.type.MapIdComponent;
-import net.minecraft.component.type.TooltipDisplayComponent;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.StackReference;
-import net.minecraft.item.BundleItem;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.item.Items;
-import net.minecraft.item.consume.UseAction;
-import net.minecraft.item.map.MapState;
-import net.minecraft.item.tooltip.BundleTooltipData;
-import net.minecraft.item.tooltip.TooltipData;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.ClickType;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.ColorHelper;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
 import xyz.nucleoid.packettweaker.PacketContext;
 
 import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
 import static com.craftycorvid.improvedmaps.ImprovedMapsNetworking.PLAYERS_WITH_CLIENT;
 
 public class AtlasItem extends BundleItem implements PolymerItem {
-    private static final int FULL_ITEM_BAR_COLOR = ColorHelper.fromFloats(1.0F, 1.0F, 0.33F, 0.33F);
-    private static final int ITEM_BAR_COLOR = ColorHelper.fromFloats(1.0F, 0.44F, 0.53F, 1.0F);
+    private static final int FULL_ITEM_BAR_COLOR = ARGB.colorFromFloat(1.0F, 1.0F, 0.33F, 0.33F);
+    private static final int ITEM_BAR_COLOR = ARGB.colorFromFloat(1.0F, 0.44F, 0.53F, 1.0F);
 
-    public AtlasItem(Settings settings) {
+    public AtlasItem(Properties settings) {
         super(settings);
     }
 
     @Override
     public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
-        ServerPlayerEntity player = context.getPlayer();
-        if (player == null || PLAYERS_WITH_CLIENT.contains(player.getUuid()))
+        ServerPlayer player = context.getPlayer();
+        if (player == null || PLAYERS_WITH_CLIENT.contains(player.getUUID()))
             return this;
         else
             return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;
     }
 
     @Override
-    public Identifier getPolymerItemModel(ItemStack itemStack, PacketContext context) {
+    public ResourceLocation getPolymerItemModel(ItemStack itemStack, PacketContext context) {
         if (PolymerResourcePackUtils.hasMainPack(context)) {
             return id("atlas");
         } else {
-            return Identifier.of("minecraft", "book");
+            return ResourceLocation.fromNamespaceAndPath("minecraft", "book");
         }
     }
 
     @Override
-    public ItemStack getPolymerItemStack(ItemStack itemStack, TooltipType tooltipType,
+    public ItemStack getPolymerItemStack(ItemStack itemStack, TooltipFlag tooltipType,
             PacketContext context) {
-        ItemStack clientStack =
-                PolymerItem.super.getPolymerItemStack(itemStack, tooltipType, context);
+        ItemStack clientStack = PolymerItem.super.getPolymerItemStack(itemStack, tooltipType, context);
 
         String dimension = itemStack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
 
         List<String> stringList = new ArrayList<>();
         stringList.add(dimension);
 
-        clientStack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+        clientStack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
                 new ArrayList<>(), new ArrayList<>(), stringList, new ArrayList<>()));
         return clientStack;
     }
 
     @Override
-    public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, PacketContext context) {
+    public void modifyClientTooltip(List<Component> tooltip, ItemStack stack, PacketContext context) {
         String dimension = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
         Byte scale = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, null);
         int filled_maps = stack
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
                 .size();
-        Integer empty_maps =
-                stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+        Integer empty_maps = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
-        tooltip.add(Text.literal(filled_maps + "/512 Filled Maps").formatted(Formatting.GRAY));
-        tooltip.add(Text.literal(empty_maps + " Empty Maps").formatted(Formatting.GRAY));
+        tooltip.add(Component.literal(filled_maps + "/512 Filled Maps").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(empty_maps + " Empty Maps").withStyle(ChatFormatting.GRAY));
         if (dimension != null)
             tooltip.add(
-                    Text.literal("Dimension " + ImprovedMapsUtils.formatDimensionString(dimension))
-                            .formatted(Formatting.GRAY));
+                    Component.literal("Dimension " + ImprovedMapsUtils.formatDimensionString(dimension))
+                            .withStyle(ChatFormatting.GRAY));
         if (scale != null)
-            tooltip.add(Text.literal("Scale " + ImprovedMapsUtils.scaleToString(scale))
-                    .formatted(Formatting.GRAY));
+            tooltip.add(Component.literal("Scale " + ImprovedMapsUtils.scaleToString(scale))
+                    .withStyle(ChatFormatting.GRAY));
     }
 
     @Override
-    public void onCraft(ItemStack stack, World world) {
-        BundleContentsComponent bundleContents = stack
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
-        ItemStack map = bundleContents.get(0);
-        MapIdComponent mapIdComponent = map.get(DataComponentTypes.MAP_ID);
-        MapState activeState = FilledMapItem.getMapState(mapIdComponent, world);
+    public void onCraftedPostProcess(ItemStack stack, Level world) {
+        BundleContents bundleContents = stack
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
+        ItemStack map = bundleContents.getItemUnsafe(0);
+        MapId mapIdComponent = map.get(DataComponents.MAP_ID);
+        MapItemSavedData activeState = MapItem.getSavedData(mapIdComponent, world);
         if (activeState != null) {
             stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, activeState.scale);
             stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
-                    activeState.dimension.getValue().toString());
+                    activeState.dimension.location().toString());
         }
-        stack.set(DataComponentTypes.MAP_ID, mapIdComponent);
+        stack.set(DataComponents.MAP_ID, mapIdComponent);
     }
 
     @Override
-    public boolean onStackClicked(ItemStack atlas, Slot slot, ClickType clickType,
-            PlayerEntity player) {
-        if (player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
+    public boolean overrideStackedOnOther(ItemStack atlas, Slot slot, ClickAction clickType,
+            Player player) {
+        if (player.isCreative() && player.containerMenu instanceof InventoryMenu)
             return false;
         if (atlas.getCount() > 1)
             return false;
 
-        BundleContentsComponent bundleContentsComponent =
-                atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
+        BundleContents bundleContentsComponent = atlas.get(DataComponents.BUNDLE_CONTENTS);
         if (bundleContentsComponent == null)
             return false;
 
-        ItemStack itemStack = slot.getStack();
-        BundleContentsComponent.Builder builder =
-                new BundleContentsComponent.Builder(bundleContentsComponent);
+        ItemStack itemStack = slot.getItem();
+        BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
         ((ICustomBundleContentBuilder) builder).setMaxSize(512);
-        if (clickType == ClickType.LEFT && !itemStack.isEmpty()) {
-            if (itemStack.isOf(Items.MAP)) {
+        if (clickType == ClickAction.PRIMARY && !itemStack.isEmpty()) {
+            if (itemStack.is(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, itemStack, clickType);
-            } else if (itemStack.isOf(Items.FILLED_MAP)) {
-                String dimension =
-                        atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
+            } else if (itemStack.is(Items.FILLED_MAP)) {
+                String dimension = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
                 Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) -1);
-                MapState mapState = FilledMapItem.getMapState(itemStack, player.getEntityWorld());
+                MapItemSavedData mapState = MapItem.getSavedData(itemStack, player.level());
 
                 if (mapState.scale != scale
-                        || !mapState.dimension.getValue().toString().equals(dimension))
+                        || !mapState.dimension.location().toString().equals(dimension))
                     return false;
 
-                if (builder.add(slot, player) > 0) {
+                if (builder.tryTransfer(slot, player) > 0) {
                     playInsertSound(player);
                 } else {
                     playInsertFailSound(player);
                 }
-                atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
-                this.onContentChanged(player);
+                atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
+                this.broadcastChangesOnContainerMenu(player);
                 return true;
             }
-        } else if (clickType == ClickType.RIGHT && itemStack.isEmpty()) {
-            atlas.set(DataComponentTypes.MAP_ID, null);
-            ItemStack itemStack2 = builder.removeSelected();
+        } else if (clickType == ClickAction.SECONDARY && itemStack.isEmpty()) {
+            atlas.set(DataComponents.MAP_ID, null);
+            ItemStack itemStack2 = builder.removeOne();
             if (itemStack2 != null) {
-                ItemStack itemStack3 = slot.insertStack(itemStack2);
+                ItemStack itemStack3 = slot.safeInsert(itemStack2);
                 if (itemStack3.getCount() > 0) {
-                    builder.add(itemStack3);
+                    builder.tryInsert(itemStack3);
                 } else {
                     playRemoveOneSound(player);
                 }
             }
 
-            atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
-            this.onContentChanged(player);
+            atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
+            this.broadcastChangesOnContainerMenu(player);
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean onClicked(ItemStack atlas, ItemStack otherStack, Slot slot, ClickType clickType,
-            PlayerEntity player, StackReference cursorStackReference) {
-        if (player.isCreative() && player.currentScreenHandler instanceof PlayerScreenHandler)
+    public boolean overrideOtherStackedOnMe(ItemStack atlas, ItemStack otherStack, Slot slot, ClickAction clickType,
+            Player player, SlotAccess cursorStackReference) {
+        if (player.isCreative() && player.containerMenu instanceof InventoryMenu)
             return false;
         if (atlas.getCount() > 1)
             return false;
-        if (clickType == ClickType.LEFT && otherStack.isEmpty()) {
-            setSelectedStackIndex(atlas, -1);
+        if (clickType == ClickAction.PRIMARY && otherStack.isEmpty()) {
+            toggleSelectedItem(atlas, -1);
             return false;
         }
 
-        BundleContentsComponent bundleContentsComponent =
-                atlas.get(DataComponentTypes.BUNDLE_CONTENTS);
+        BundleContents bundleContentsComponent = atlas.get(DataComponents.BUNDLE_CONTENTS);
         if (bundleContentsComponent == null)
             return false;
 
-        BundleContentsComponent.Builder builder =
-                new BundleContentsComponent.Builder(bundleContentsComponent);
+        BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
         ((ICustomBundleContentBuilder) builder).setMaxSize(512);
-        if (clickType == ClickType.LEFT && !otherStack.isEmpty()) {
-            if (otherStack.isOf(Items.MAP)) {
+        if (clickType == ClickAction.PRIMARY && !otherStack.isEmpty()) {
+            if (otherStack.is(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, otherStack, clickType);
-            } else if (otherStack.isOf(Items.FILLED_MAP)) {
-                String dimension =
-                        atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
+            } else if (otherStack.is(Items.FILLED_MAP)) {
+                String dimension = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
                 Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) 0);
-                MapState mapState = FilledMapItem.getMapState(otherStack, player.getEntityWorld());
+                MapItemSavedData mapState = MapItem.getSavedData(otherStack, player.level());
 
                 if (mapState.scale != scale
-                        || !mapState.dimension.getValue().toString().equals(dimension)) {
+                        || !mapState.dimension.location().toString().equals(dimension)) {
                     playInsertFailSound(player);
                     return false;
                 }
 
-                if (slot.canTakePartial(player) && builder.add(otherStack) > 0) {
+                if (slot.allowModification(player) && builder.tryInsert(otherStack) > 0) {
                     playInsertSound(player);
                 } else {
                     playInsertFailSound(player);
                 }
 
-                atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
-                this.onContentChanged(player);
+                atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
+                this.broadcastChangesOnContainerMenu(player);
                 return true;
             }
-        } else if (clickType == ClickType.RIGHT && otherStack.isEmpty()) {
-            atlas.set(DataComponentTypes.MAP_ID, null);
-            if (slot.canTakePartial(player)) {
-                ItemStack itemStack = builder.removeSelected();
+        } else if (clickType == ClickAction.SECONDARY && otherStack.isEmpty()) {
+            atlas.set(DataComponents.MAP_ID, null);
+            if (slot.allowModification(player)) {
+                ItemStack itemStack = builder.removeOne();
                 if (itemStack != null) {
                     playRemoveOneSound(player);
                     cursorStackReference.set(itemStack);
                 } else {
-                    int emptyCount =
-                            atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+                    int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                     if (emptyCount > 0) {
                         playRemoveOneSound(player);
                         cursorStackReference.set(new ItemStack(Items.MAP, emptyCount));
@@ -245,114 +236,114 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 }
             }
 
-            atlas.set(DataComponentTypes.BUNDLE_CONTENTS, builder.build());
-            this.onContentChanged(player);
+            atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
+            this.broadcastChangesOnContainerMenu(player);
             return true;
         }
-        setSelectedStackIndex(atlas, -1);
+        toggleSelectedItem(atlas, -1);
         return false;
     }
 
-    private boolean handleEmptyMapCLick(ItemStack atlas, ItemStack map, ClickType clickType) {
+    private boolean handleEmptyMapCLick(ItemStack atlas, ItemStack map, ClickAction clickType) {
         int emptyMapCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
-        int transferCount = clickType == ClickType.RIGHT ? 1 : map.getCount();
+        int transferCount = clickType == ClickAction.SECONDARY ? 1 : map.getCount();
         atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyMapCount + transferCount);
-        map.decrement(transferCount);
+        map.shrink(transferCount);
         return true;
     }
 
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        BlockState blockState = context.getWorld().getBlockState(context.getBlockPos());
-        if (blockState.isIn(BlockTags.BANNERS)) {
-            World world = context.getWorld();
-            if (world instanceof net.minecraft.server.world.ServerWorld) {
-                MapIdComponent mapIdComponent = context.getStack().get(DataComponentTypes.MAP_ID);
-                MapState mapState = world.getMapState(mapIdComponent);
+    public InteractionResult useOn(UseOnContext context) {
+        BlockState blockState = context.getLevel().getBlockState(context.getClickedPos());
+        if (blockState.is(BlockTags.BANNERS)) {
+            Level world = context.getLevel();
+            if (world instanceof net.minecraft.server.level.ServerLevel) {
+                MapId mapIdComponent = context.getItemInHand().get(DataComponents.MAP_ID);
+                MapItemSavedData mapState = world.getMapData(mapIdComponent);
                 if (mapState != null
-                        && !mapState.addBanner(context.getWorld(), context.getBlockPos())) {
-                    return ActionResult.FAIL;
+                        && !mapState.toggleBanner(context.getLevel(), context.getClickedPos())) {
+                    return InteractionResult.FAIL;
                 }
             }
 
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         } else {
-            return super.useOnBlock(context);
+            return super.useOn(context);
         }
     }
 
     // Disable onUse for AtlasItem
     @Override
-    public ActionResult use(World world, PlayerEntity user, Hand hand) {
-        return ActionResult.PASS;
+    public InteractionResult use(Level world, Player user, InteractionHand hand) {
+        return InteractionResult.PASS;
     }
 
     @Override
-    public UseAction getUseAction(ItemStack stack) {
-        return UseAction.NONE;
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.NONE;
     }
-
 
     // Client-side rendering of the bundle fullness bar
     // Based on
     // https://github.com/FaeWulf/Diversity/blob/sub-mod-1.21.5/common-better-bundle/src/main/java/xyz/faewulf/diversity_better_bundle/mixin/item/buildingBundle/BundleItemMixin.java
-    public static float getAmountFilled(ItemStack stack) {
-        int usedSpace = MathHelper.multiplyFraction(stack
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
-                .getOccupancy(), 64);
+    public static float getFullnessDisplay(ItemStack stack) {
+        int usedSpace = Mth.mulAndTruncate(stack
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
+                .weight(), 64);
         int maxValue = 512;
 
         return usedSpace * 1f / maxValue;
     }
 
-    // override the weight value when pass the bundlecontens to the client side for rendering the
+    // override the weight value when pass the bundlecontens to the client side for
+    // rendering the
     // fullness bar
     @Override
-    public Optional<TooltipData> getTooltipData(ItemStack stack) {
-        Optional<TooltipData> original = super.getTooltipData(stack);
+    public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
+        Optional<TooltipComponent> original = super.getTooltipImage(stack);
 
-        TooltipDisplayComponent tooltipdisplay = stack
-                .getOrDefault(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplayComponent.DEFAULT);
+        TooltipDisplay tooltipdisplay = stack
+                .getOrDefault(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT);
 
-        if (!tooltipdisplay.shouldDisplay(DataComponentTypes.BUNDLE_CONTENTS)) {
+        if (!tooltipdisplay.shows(DataComponents.BUNDLE_CONTENTS)) {
             return original;
         } else {
-            int usedSpace = MathHelper
-                    .multiplyFraction(stack.getOrDefault(DataComponentTypes.BUNDLE_CONTENTS,
-                            BundleContentsComponent.DEFAULT).getOccupancy(), 64);
+            int usedSpace = Mth
+                    .mulAndTruncate(stack.getOrDefault(DataComponents.BUNDLE_CONTENTS,
+                            BundleContents.EMPTY).weight(), 64);
             int maxValue = 512;
 
-            BundleContentsComponent bundleContents = stack.getOrDefault(
-                    DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT);
+            BundleContents bundleContents = stack.getOrDefault(
+                    DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
 
             // override to List
             List<ItemStack> itemStacks = new ArrayList<>();
-            bundleContents.stream().forEach(itemStacks::add);
+            bundleContents.itemCopyStream().forEach(itemStacks::add);
 
             // create new bundle content
-            BundleContentsComponent bundleContents1 = new BundleContentsComponent(itemStacks,
+            BundleContents bundleContents1 = new BundleContents(itemStacks,
                     Fraction.getFraction(usedSpace * 1f / maxValue),
-                    bundleContents.getSelectedStackIndex());
+                    bundleContents.getSelectedItem());
 
             // pass to client renderer
-            return Optional.ofNullable(bundleContents1).map(BundleTooltipData::new);
+            return Optional.ofNullable(bundleContents1).map(BundleTooltip::new);
         }
     }
 
     @Override
-    public int getItemBarStep(ItemStack stack) {
-        int usedSpace = MathHelper.multiplyFraction(stack
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
-                .getOccupancy(), 64);
+    public int getBarWidth(ItemStack stack) {
+        int usedSpace = Mth.mulAndTruncate(stack
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
+                .weight(), 64);
         int maxValue = 512;
 
         return (int) Math.clamp(Math.floor(13f * usedSpace / maxValue), 1, 13);
     }
 
     @Override
-    public int getItemBarColor(ItemStack stack) {
-        int usedSpace = MathHelper.multiplyFraction(stack
-                .getOrDefault(DataComponentTypes.BUNDLE_CONTENTS, BundleContentsComponent.DEFAULT)
-                .getOccupancy(), 64);
+    public int getBarColor(ItemStack stack) {
+        int usedSpace = Mth.mulAndTruncate(stack
+                .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
+                .weight(), 64);
         int maxValue = 512;
 
         if (usedSpace >= maxValue) {
