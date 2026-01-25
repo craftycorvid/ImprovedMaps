@@ -4,7 +4,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.CustomRecipe.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +16,13 @@ import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 public final class ImprovedMaps implements ModInitializer {
 	public static final String MOD_ID = "improved-maps";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public static final ResourceLocation HELLO_PACKET = id("hello");
+	public static final Identifier HELLO_PACKET = id("hello");
 
 	public static Serializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
 	public static Serializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
 
-	public static ResourceLocation id(String path) {
-		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+	public static Identifier id(String path) {
+		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
 	@Override

@@ -7,7 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -38,7 +38,7 @@ public class ImprovedMapsItems {
         }
 
         public static final CreativeModeTab IMPROVED_MAPS_GROUP = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB,
-                        ResourceLocation.fromNamespaceAndPath(ImprovedMaps.MOD_ID, "atlas_tab"),
+                        Identifier.fromNamespaceAndPath(ImprovedMaps.MOD_ID, "atlas_tab"),
                         new CreativeModeTab.Builder(CreativeModeTab.Row.TOP, 0) // TOP row, first column
                                         .title(Component.translatable("itemGroup."
                                                         + ImprovedMaps.MOD_ID + ".atlas_tab"))
@@ -60,7 +60,6 @@ public class ImprovedMapsItems {
                                                                         (byte) scale));
                                                 }
                                         }).build());
-
 
         public static void initialize() {
 

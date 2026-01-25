@@ -6,7 +6,7 @@ import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.ARGB;
@@ -64,11 +64,11 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     }
 
     @Override
-    public ResourceLocation getPolymerItemModel(ItemStack itemStack, PacketContext context) {
+    public Identifier getPolymerItemModel(ItemStack itemStack, PacketContext context) {
         if (PolymerResourcePackUtils.hasMainPack(context)) {
             return id("atlas");
         } else {
-            return ResourceLocation.fromNamespaceAndPath("minecraft", "book");
+            return Identifier.fromNamespaceAndPath("minecraft", "book");
         }
     }
 
@@ -117,7 +117,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         if (activeState != null) {
             stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, activeState.scale);
             stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
-                    activeState.dimension.location().toString());
+                    activeState.dimension.identifier().toString());
         }
         stack.set(DataComponents.MAP_ID, mapIdComponent);
     }
@@ -146,7 +146,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 MapItemSavedData mapState = MapItem.getSavedData(itemStack, player.level());
 
                 if (mapState.scale != scale
-                        || !mapState.dimension.location().toString().equals(dimension))
+                        || !mapState.dimension.identifier().toString().equals(dimension))
                     return false;
 
                 if (builder.tryTransfer(slot, player) > 0) {
@@ -204,7 +204,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 MapItemSavedData mapState = MapItem.getSavedData(otherStack, player.level());
 
                 if (mapState.scale != scale
-                        || !mapState.dimension.location().toString().equals(dimension)) {
+                        || !mapState.dimension.identifier().toString().equals(dimension)) {
                     playInsertFailSound(player);
                     return false;
                 }

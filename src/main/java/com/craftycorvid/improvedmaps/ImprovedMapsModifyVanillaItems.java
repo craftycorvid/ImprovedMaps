@@ -35,7 +35,7 @@ public final class ImprovedMapsModifyVanillaItems {
                 if (mapState != null) {
                     loreTexts.add(Component
                             .literal("Dimension " + ImprovedMapsUtils.formatDimensionString(
-                                    mapState.dimension.location().toString()))
+                                    mapState.dimension.identifier().toString()))
                             .setStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)));
                     loreTexts.add(Component
                             .literal("Center " + mapState.centerX + ", " + mapState.centerZ)

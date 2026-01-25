@@ -46,8 +46,7 @@ public final class ImprovedMapsLifecycleEvents {
 
             BundleContents contents = atlas.get(DataComponents.BUNDLE_CONTENTS);
             if (contents.isEmpty()) {
-                BundleContents.Mutable builder =
-                        new BundleContents.Mutable(BundleContents.EMPTY);
+                BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
                 ((ICustomBundleContentBuilder) builder).setMaxSize(512);
 
                 int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
@@ -82,7 +81,7 @@ public final class ImprovedMapsLifecycleEvents {
         // Create new Map entries
         if (isPlayerOutsideAllMapRegions(activeState, player)
                 && atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "")
-                        .equals(world.dimension().location().toString())) {
+                        .equals(world.dimension().identifier().toString())) {
             ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
                     Mth.floor(player.getX()), Mth.floor(player.getZ()));
             if (newMap != null)
@@ -117,8 +116,8 @@ public final class ImprovedMapsLifecycleEvents {
         return getAllMapsFromAtlas(world, atlas).stream().filter(map -> {
             MapItemSavedData mapState = MapItem.getSavedData(map, world);
             return mapState != null
-                    ? mapState.dimension.location()
-                            .compareTo(world.dimension().location()) == 0
+                    ? mapState.dimension.identifier()
+                            .compareTo(world.dimension().identifier()) == 0
                     : false;
         }).toList();
     }
@@ -151,8 +150,7 @@ public final class ImprovedMapsLifecycleEvents {
             MapItemSavedData activeState, int playerX, int playerZ) {
         BundleContents bundleContents = atlas
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
-        BundleContents.Mutable builder =
-                new BundleContents.Mutable(bundleContents);
+        BundleContents.Mutable builder = new BundleContents.Mutable(bundleContents);
         ((ICustomBundleContentBuilder) builder).setMaxSize(512);
         int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
