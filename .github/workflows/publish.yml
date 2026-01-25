@@ -2,10 +2,11 @@ name: Publish on GitHub & Modrinth
 on: [ workflow_dispatch ]
 
 env:                                              
-  VERSION: 0.4.4
-  RELEASE_NAME: Improved Maps 0.4.4 for Minecraft 1.21.9
+  VERSION: 0.4.5
+  RELEASE_NAME: Improved Maps 0.4.5 for Minecraft 1.21.11
   CHANGE_LOG: |
-    - Bump server-translations version
+    - Upgrade to Minecraft 1.21.11
+    - Fix map duping bug
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}           
 
