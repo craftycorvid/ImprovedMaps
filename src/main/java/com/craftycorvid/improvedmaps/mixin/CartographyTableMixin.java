@@ -99,7 +99,7 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
             super(inventory, slot, x, y);
         }
 
-        @ModifyReturnValue(method = "canInsert", at = @At("RETURN"))
+        @ModifyReturnValue(method = "mayPlace", at = @At("RETURN"))
         private boolean canInsert(boolean original, ItemStack stack) {
             return original || stack.is(Items.BOOK);
         }
@@ -116,8 +116,8 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
         @Final
         CartographyTableMenu field_17303;
 
-        @Inject(method = "onTakeItem", at = @At("HEAD"), cancellable = true)
-        public void onTakeItem(Player player, ItemStack stack, CallbackInfo ci) {
+        @Inject(method = "onTake", at = @At("HEAD"), cancellable = true)
+        public void onTake(Player player, ItemStack stack, CallbackInfo ci) {
             var slots = ((ScreenHandlerAccessor) field_17303).getSlots();
             var firstSlot = slots.get(0).getItem();
             var secondSlot = slots.get(1).getItem();
