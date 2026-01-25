@@ -39,10 +39,10 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
     private ResultContainer resultContainer;
 
     @Shadow
-    private void setupResultSlot(ItemStack map, ItemStack item, ItemStack oldResult) {}
+    private void setupResultSlot(ItemStack map, ItemStack item, ItemStack oldResult) {
+    }
 
-    @Inject(method = "slotsChanged", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/item/ItemStack;isEmpty()Z", ordinal = 0), cancellable = true)
+    @Inject(method = "slotsChanged", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;isEmpty()Z", ordinal = 0), cancellable = true)
     private void callUpdateResultOnSingleAtlas(Container inventory, CallbackInfo ci,
             @Local(ordinal = 0) ItemStack itemStack, @Local(ordinal = 1) ItemStack itemStack2,
             @Local(ordinal = 2) ItemStack itemStack3) {
@@ -63,8 +63,7 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
                 ItemStack newResult = null;
 
                 if (map.is(ImprovedMapsItems.ATLAS) && item.isEmpty()) {
-                    Integer empty_maps =
-                            map.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+                    Integer empty_maps = map.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                     if (empty_maps > 0) {
                         newResult = new ItemStack(Items.MAP, empty_maps);
                         this.broadcastChanges();
@@ -122,8 +121,20 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
             var firstSlot = slots.get(0).getItem();
             var secondSlot = slots.get(1).getItem();
 
-            if (firstSlot.is(ImprovedMapsItems.ATLAS) && secondSlot.isEmpty()) {
-                firstSlot.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+            if (firstSlot.is(ImprovedMapsItems.ATLAS) && secondSlot.isEmpty()
+                    && stack.is(Items.MAP)) {
+                int emptyMaps = firstSlot.getOrDefault(
+                        ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
+                int remaining = Math.max(0, emptyMaps - stack.getCount());
+                ItemStack atlasResult = firstSlot.copy();
+                atlasResult.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, remaining);
+
+                slots.get(0).set(ItemStack.EMPTY);
+                this.set(ItemStack.EMPTY);
+                if (!player.getInventory().add(atlasResult)) {
+                    player.drop(atlasResult, false);
+                }
+                field_17303.broadcastChanges();
                 ci.cancel();
             }
         }
