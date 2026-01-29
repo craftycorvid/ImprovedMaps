@@ -1,5 +1,7 @@
 package com.craftycorvid.improvedmaps;
 
+import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -35,6 +37,16 @@ public final class ImprovedMapsLifecycleEvents {
             ItemStack offHand = player.getItemInHand(InteractionHand.OFF_HAND);
             if (offHand.is(ImprovedMapsItems.ATLAS))
                 AtlasPlayerHandTick(player, offHand, EquipmentSlot.OFFHAND);
+
+            if (MOD_CONFIG.updateAtlasWhenNotInHand) {
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    ItemStack stack = player.getInventory().getItem(i);
+                    if (stack.is(ImprovedMapsItems.ATLAS) &&
+                            !stack.equals(mainHand) && !stack.equals(offHand)) {
+                        AtlasPlayerHandTick(player, stack, EquipmentSlot.MAINHAND);
+                    }
+                }
+            }
         }
     }
 

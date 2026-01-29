@@ -22,6 +22,7 @@ public class ModConfig {
 
     // Config values
     public int atlasMapCapacity = 512;
+    public boolean updateAtlasWhenNotInHand = true;
 
     // Reading and saving
     public static ModConfig loadConfig() {
