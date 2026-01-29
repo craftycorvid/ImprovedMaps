@@ -43,6 +43,7 @@ import eu.pb4.polymer.core.api.item.PolymerItem;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import xyz.nucleoid.packettweaker.PacketContext;
 
+import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
 import static com.craftycorvid.improvedmaps.ImprovedMapsNetworking.PLAYERS_WITH_CLIENT;
 
@@ -96,7 +97,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 .size();
         Integer empty_maps = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
-        tooltip.add(Component.literal(filled_maps + "/512 Filled Maps").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(filled_maps + "/" + MOD_CONFIG.atlasMapCapacity + " Filled Maps")
+                .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(empty_maps + " Empty Maps").withStyle(ChatFormatting.GRAY));
         if (dimension != null)
             tooltip.add(
@@ -136,7 +138,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
         ItemStack itemStack = slot.getItem();
         BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
         if (clickType == ClickAction.PRIMARY && !itemStack.isEmpty()) {
             if (itemStack.is(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, itemStack, clickType);
@@ -194,7 +196,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             return false;
 
         BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
         if (clickType == ClickAction.PRIMARY && !otherStack.isEmpty()) {
             if (otherStack.is(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, otherStack, clickType);
@@ -289,9 +291,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         int usedSpace = Mth.mulAndTruncate(stack
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
                 .weight(), 64);
-        int maxValue = 512;
 
-        return usedSpace * 1f / maxValue;
+        return usedSpace * 1f / MOD_CONFIG.atlasMapCapacity;
     }
 
     // override the weight value when pass the bundlecontens to the client side for
@@ -310,7 +311,6 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             int usedSpace = Mth
                     .mulAndTruncate(stack.getOrDefault(DataComponents.BUNDLE_CONTENTS,
                             BundleContents.EMPTY).weight(), 64);
-            int maxValue = 512;
 
             BundleContents bundleContents = stack.getOrDefault(
                     DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
@@ -321,7 +321,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
             // create new bundle content
             BundleContents bundleContents1 = new BundleContents(itemStacks,
-                    Fraction.getFraction(usedSpace * 1f / maxValue),
+                    Fraction.getFraction(usedSpace * 1f / MOD_CONFIG.atlasMapCapacity),
                     bundleContents.getSelectedItem());
 
             // pass to client renderer
@@ -334,9 +334,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         int usedSpace = Mth.mulAndTruncate(stack
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
                 .weight(), 64);
-        int maxValue = 512;
 
-        return (int) Math.clamp(Math.floor(13f * usedSpace / maxValue), 1, 13);
+        return (int) Math.clamp(Math.floor(13f * usedSpace / MOD_CONFIG.atlasMapCapacity), 1, 13);
     }
 
     @Override
@@ -344,9 +343,8 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         int usedSpace = Mth.mulAndTruncate(stack
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
                 .weight(), 64);
-        int maxValue = 512;
 
-        if (usedSpace >= maxValue) {
+        if (usedSpace >= MOD_CONFIG.atlasMapCapacity) {
             return FULL_ITEM_BAR_COLOR;
         } else {
             return ITEM_BAR_COLOR;

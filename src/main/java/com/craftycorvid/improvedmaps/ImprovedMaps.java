@@ -8,6 +8,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.CustomRecipe.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.craftycorvid.improvedmaps.config.ModConfig;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.craftycorvid.improvedmaps.recipe.AtlasCopyRecipe;
 import com.craftycorvid.improvedmaps.recipe.AtlasRecipe;
@@ -17,6 +19,7 @@ public final class ImprovedMaps implements ModInitializer {
 	public static final String MOD_ID = "improved-maps";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static final Identifier HELLO_PACKET = id("hello");
+	public static ModConfig MOD_CONFIG;
 
 	public static Serializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
 	public static Serializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
@@ -28,6 +31,7 @@ public final class ImprovedMaps implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Improved Maps Initializing");
+		MOD_CONFIG = ModConfig.loadConfig();
 
 		ImprovedMapsNetworking.initialize();
 		ImprovedMapsItems.initialize();
