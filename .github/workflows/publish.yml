@@ -3,10 +3,9 @@ on: [ workflow_dispatch ]
 
 env:                                              
   VERSION: 0.4.5
-  RELEASE_NAME: Improved Maps 0.4.5 for Minecraft 1.21.11
+  RELEASE_NAME: Improved Maps 0.4.5 for Minecraft 26.1.2
   CHANGE_LOG: |
-    - Upgrade to Minecraft 1.21.11
-    - Fix map duping bug
+    - Upgrade to Minecraft 26.1.2
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}           
 
