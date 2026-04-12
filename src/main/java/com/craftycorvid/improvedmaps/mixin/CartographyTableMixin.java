@@ -113,11 +113,11 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
 
         @Shadow
         @Final
-        CartographyTableMenu field_17303;
+        CartographyTableMenu this$0;
 
         @Inject(method = "onTake", at = @At("HEAD"), cancellable = true)
         public void onTake(Player player, ItemStack stack, CallbackInfo ci) {
-            var slots = ((ScreenHandlerAccessor) field_17303).getSlots();
+            var slots = ((ScreenHandlerAccessor) this$0).getSlots();
             var firstSlot = slots.get(0).getItem();
             var secondSlot = slots.get(1).getItem();
 
@@ -134,7 +134,7 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
                 if (!player.getInventory().add(atlasResult)) {
                     player.drop(atlasResult, false);
                 }
-                field_17303.broadcastChanges();
+                this$0.broadcastChanges();
                 ci.cancel();
             }
         }

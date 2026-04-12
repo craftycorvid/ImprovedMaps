@@ -1,5 +1,4 @@
-accessWidener v2 named
-accessible method net/minecraft/world/item/component/BundleContents <init> (Ljava/util/List;Lorg/apache/commons/lang3/math/Fraction;I)V
+accessWidener v2 official
 accessible method net/minecraft/world/item/BundleItem playRemoveOneSound (Lnet/minecraft/world/entity/Entity;)V
 accessible method net/minecraft/world/item/BundleItem playInsertSound (Lnet/minecraft/world/entity/Entity;)V
 accessible method net/minecraft/world/item/BundleItem playInsertFailSound (Lnet/minecraft/world/entity/Entity;)V

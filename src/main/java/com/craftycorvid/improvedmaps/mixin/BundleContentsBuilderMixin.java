@@ -8,9 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
-import net.fabricmc.fabric.mixin.transfer.BundleContentsAccessor;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 
 // Implementation Based on
@@ -24,10 +22,8 @@ public abstract class BundleContentsBuilderMixin implements ICustomBundleContent
     private int maxSize = 64;
 
     @Inject(method = "getMaxAmountToAdd", at = @At("RETURN"), cancellable = true)
-    private void getMaxAllowedInject(ItemStack stack, CallbackInfoReturnable<Integer> cir) {
-        int itemValue = Mth
-                .mulAndTruncate(BundleContentsAccessor.getOccupancy(stack), 64);
-
+    private void getMaxAllowedInject(Fraction occupancy, CallbackInfoReturnable<Integer> cir) {
+        int itemValue = Mth.mulAndTruncate(occupancy, 64);
         int usedSpace = Mth.mulAndTruncate(this.weight, 64);
         int freeSpace = maxSize - usedSpace;
 

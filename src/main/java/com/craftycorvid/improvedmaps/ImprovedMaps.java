@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.crafting.CustomRecipe.Serializer;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +21,8 @@ public final class ImprovedMaps implements ModInitializer {
 	public static final Identifier HELLO_PACKET = id("hello");
 	public static ModConfig MOD_CONFIG;
 
-	public static Serializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
-	public static Serializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
+	public static RecipeSerializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;
+	public static RecipeSerializer<AtlasCopyRecipe> ATLAS_COPY_RECIPE_SERIALIZER;
 
 	public static Identifier id(String path) {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
@@ -40,9 +40,9 @@ public final class ImprovedMaps implements ModInitializer {
 		PolymerResourcePackUtils.addModAssets(MOD_ID);
 
 		ATLAS_RECIPE_SERIALIZER = Registry.register(BuiltInRegistries.RECIPE_SERIALIZER,
-				id("crafting_atlas"), new AtlasRecipe.Serializer(AtlasRecipe::new));
+				id("crafting_atlas"), AtlasRecipe.SERIALIZER);
 		ATLAS_COPY_RECIPE_SERIALIZER = Registry.register(BuiltInRegistries.RECIPE_SERIALIZER,
-				id("copy_atlas"), new AtlasCopyRecipe.Serializer(AtlasCopyRecipe::new));
+				id("copy_atlas"), AtlasCopyRecipe.SERIALIZER);
 		ServerTickEvents.START_SERVER_TICK
 				.register(ImprovedMapsLifecycleEvents::ImprovedMapsServerTick);
 	}

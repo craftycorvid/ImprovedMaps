@@ -13,12 +13,13 @@ import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import com.google.common.collect.Lists;
+import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.core.api.item.PolymerItemUtils;
 
 public final class ImprovedMapsModifyVanillaItems {
     public static void initialize() {
-        PolymerItemUtils.CONTEXT_ITEM_CHECK.register((itemStack, context) -> {
-            return itemStack.is(Items.FILLED_MAP);
+        PolymerItemUtils.CONTEXT_ITEM_CHECK.register((itemInstance, context) -> {
+            return itemInstance.is(Items.FILLED_MAP);
         });
 
         PolymerItemUtils.ITEM_MODIFICATION_EVENT.register((original, client, context) -> {
@@ -26,10 +27,10 @@ public final class ImprovedMapsModifyVanillaItems {
             if (original.is(Items.FILLED_MAP)) {
                 ItemStack out = original.copy();
                 List<Component> loreTexts = Lists.newArrayList();
-                if (context.getPlayer() == null) {
+                if (PolymerCommonUtils.getPlayer(context) == null) {
                     return client;
                 }
-                ServerLevel world = context.getPlayer().level();
+                ServerLevel world = PolymerCommonUtils.getPlayer(context).level();
                 MapItemSavedData mapState = MapItem.getSavedData(out, world);
 
                 if (mapState != null) {

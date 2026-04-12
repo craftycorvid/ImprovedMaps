@@ -117,8 +117,8 @@ public final class ImprovedMapsLifecycleEvents {
         BundleContents bundleContents = atlas
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         List<ItemStack> mapStacks = new ArrayList<>();
-        bundleContents.items().forEach((map) -> {
-            if (!map.isEmpty() && map.is(Items.FILLED_MAP))
+        bundleContents.itemCopyStream().forEach((map) -> {
+            if (map.is(Items.FILLED_MAP))
                 mapStacks.add(map);
         });
         return mapStacks;

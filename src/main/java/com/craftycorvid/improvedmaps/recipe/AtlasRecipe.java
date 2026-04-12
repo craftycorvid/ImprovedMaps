@@ -1,8 +1,9 @@
 package com.craftycorvid.improvedmaps.recipe;
 
 import java.util.List;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
@@ -12,17 +13,22 @@ import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeBookCategories;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
-import com.craftycorvid.improvedmaps.ImprovedMaps;
+import com.mojang.serialization.MapCodec;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
-import eu.pb4.polymer.core.api.utils.PolymerObject;
 
 public class AtlasRecipe extends CustomRecipe {
-    public AtlasRecipe(CraftingBookCategory category) {
-        super(category);
+    public static final AtlasRecipe INSTANCE = new AtlasRecipe();
+    public static final MapCodec<AtlasRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
+    public static final StreamCodec<RegistryFriendlyByteBuf, AtlasRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
+    public static final RecipeSerializer<AtlasRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+
+    public AtlasRecipe() {
+        super();
     }
 
     @Override
@@ -45,7 +51,7 @@ public class AtlasRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider lookup) {
+    public ItemStack assemble(CraftingInput inventory) {
         ItemStack atlas = new ItemStack(ImprovedMapsItems.ATLAS);
         ItemStack map = inventory.items().stream().filter(stack -> stack.is(Items.FILLED_MAP))
                 .findFirst().orElse(null);
@@ -61,21 +67,12 @@ public class AtlasRecipe extends CustomRecipe {
     }
 
     @Override
-    public net.minecraft.world.item.crafting.CustomRecipe.Serializer<AtlasRecipe> getSerializer() {
-        return ImprovedMaps.ATLAS_RECIPE_SERIALIZER;
+    public RecipeSerializer<AtlasRecipe> getSerializer() {
+        return SERIALIZER;
     }
 
     @Override
     public RecipeBookCategory recipeBookCategory() {
         return RecipeBookCategories.CRAFTING_EQUIPMENT;
-    }
-
-    public static class Serializer extends net.minecraft.world.item.crafting.CustomRecipe.Serializer<AtlasRecipe>
-            implements PolymerObject {
-
-        public Serializer(
-                CustomRecipe.Serializer.Factory<AtlasRecipe> factory) {
-            super(factory);
-        }
     }
 }
