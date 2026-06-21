@@ -1,17 +1,17 @@
 name: Publish on GitHub & Modrinth
-on: [ workflow_dispatch ]
+on: [workflow_dispatch]
 
-env:                                              
+env:
   VERSION: 0.4.5
-  RELEASE_NAME: Improved Maps 0.4.5 for Minecraft 26.1.2
+  RELEASE_NAME: Improved Maps 0.4.5 for Minecraft 26.2
   CHANGE_LOG: |
-    - Upgrade to Minecraft 26.1.2
+    - Upgrade to Minecraft 26.2
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
-  GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}           
+  GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
 
 jobs:
   build:
-    uses: './.github/workflows/build.yml'
+    uses: "./.github/workflows/build.yml"
   publish:
     runs-on: ubuntu-latest
     needs: build
@@ -26,11 +26,11 @@ jobs:
           modrinth-id: wRyAdXG3
           modrinth-token: "${{env.MODRINTH_TOKEN}}"
           modrinth-featured: true
-          
+
           github-tag: "v${{env.VERSION}}"
           github-token: "${{env.GITHUB_TOKEN}}"
 
-          name: "${{env.RELEASE_NAME}}"                             
+          name: "${{env.RELEASE_NAME}}"
           version: "${{env.VERSION}}"
           version-type: alpha
           changelog: "${{env.CHANGE_LOG}}"
