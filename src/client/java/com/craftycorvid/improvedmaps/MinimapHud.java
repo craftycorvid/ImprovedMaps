@@ -40,6 +40,12 @@ public final class MinimapHud {
 
         MapRenderState state = new MapRenderState();
         mc.getMapRenderer().extractRenderState(mapId, data, state);
+        // g.map() draws maps item-frame style: it skips decorations whose type has
+        // showOnItemFrame=false (the player marker, off-map pointers, ...). Force the
+        // flag on so the minimap shows every decoration, like a held map.
+        for (MapRenderState.MapDecorationRenderState decoration : state.decorations) {
+            decoration.renderOnFrame = true;
+        }
 
         int size = (int) Math.clamp(MOD_CONFIG.minimapSize, 16, 512);
         int w = mc.getWindow().getGuiScaledWidth();
