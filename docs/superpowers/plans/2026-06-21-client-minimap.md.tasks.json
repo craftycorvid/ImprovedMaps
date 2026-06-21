@@ -1,0 +1,19 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-21-client-minimap.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Minimap config fields",
+      "status": "pending",
+      "description": "**Goal:** Add `minimapEnabled`, `minimapCorner`, and `minimapSize` to the mod config, plus the `MinimapCorner` enum.\n\n**Files:**\n- Modify: `src/main/java/com/craftycorvid/improvedmaps/config/ModConfig.java`\n\n**Acceptance Criteria:**\n- minimapEnabled/minimapCorner/minimapSize fields with defaults\n- MinimapCorner enum with 4 corners\n- Gson round-trips enum by name; existing loadConfig backfills new keys\n\n**Verify:** `./gradlew build` -> BUILD SUCCESSFUL\n\n```json:metadata\n{\"files\": [\"src/main/java/com/craftycorvid/improvedmaps/config/ModConfig.java\"], \"verifyCommand\": \"./gradlew build\", \"acceptanceCriteria\": [\"fields with defaults\", \"MinimapCorner enum\", \"Gson round-trips enum\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Minimap HUD element",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** A client HUD element that tracks the last-held atlas and renders its active map in the configured corner.\n\n**Files:**\n- Create: `src/client/java/com/craftycorvid/improvedmaps/MinimapHud.java`\n- Modify: `src/client/java/com/craftycorvid/improvedmaps/ImprovedMapsClient.java`\n\n**Acceptance Criteria:**\n- Registered via HudElementRegistry.addLast\n- Hidden when disabled/hideGui/no-atlas/no-mapid/no-data\n- Last-held atlas tracking (hand -> remembered slot -> first in inventory -> none)\n- Drawn at minimapSize (clamped 16-512), 8px margin, configured corner, decorations included\n\n**Verify:** `./gradlew build` -> BUILD SUCCESSFUL; manual in-game is user's call.\n\n```json:metadata\n{\"files\": [\"src/client/java/com/craftycorvid/improvedmaps/MinimapHud.java\", \"src/client/java/com/craftycorvid/improvedmaps/ImprovedMapsClient.java\"], \"verifyCommand\": \"./gradlew build\", \"acceptanceCriteria\": [\"HudElementRegistry.addLast\", \"hidden when disabled/hideGui/no-data\", \"last-held tracking\", \"drawn in configured corner with decorations\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-21T00:00:00Z"
+}

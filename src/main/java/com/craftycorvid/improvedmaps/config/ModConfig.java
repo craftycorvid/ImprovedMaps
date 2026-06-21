@@ -20,9 +20,16 @@ public class ModConfig {
             .create();
     private static final File configFile = FabricLoader.getInstance().getConfigDir().resolve(MOD_ID + ".json").toFile();
 
+    public enum MinimapCorner {
+        TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
+    }
+
     // Config values
     public int atlasMapCapacity = 512;
     public boolean updateAtlasWhenNotInHand = true;
+    public boolean minimapEnabled = false;
+    public MinimapCorner minimapCorner = MinimapCorner.TOP_RIGHT;
+    public int minimapSize = 128;
 
     // Reading and saving
     public static ModConfig loadConfig() {
