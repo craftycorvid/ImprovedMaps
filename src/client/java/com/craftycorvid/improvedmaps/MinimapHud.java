@@ -4,8 +4,10 @@ import org.joml.Matrix3x2fStack;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +20,8 @@ import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 
 public final class MinimapHud {
     private static final int MARGIN = 8;
+    private static final Identifier MAP_BACKGROUND =
+            Identifier.fromNamespaceAndPath("minecraft", "textures/map/map_background.png");
     // Remembered main-hand hotbar slot of the last-held atlas; -1 = none.
     private static int trackedSlot = -1;
 
@@ -48,15 +52,20 @@ public final class MinimapHud {
         }
 
         int size = (int) Math.clamp(MOD_CONFIG.minimapSize, 16, 512);
+        int border = Math.max(2, Math.round(size / 16f)); // ~8px paper border at size 128
+        int widget = size + border * 2;
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
-        int x = leftAligned(MOD_CONFIG.minimapCorner) ? MARGIN : w - size - MARGIN;
-        int y = topAligned(MOD_CONFIG.minimapCorner) ? MARGIN : h - size - MARGIN;
+        int wx = leftAligned(MOD_CONFIG.minimapCorner) ? MARGIN : w - widget - MARGIN;
+        int wy = topAligned(MOD_CONFIG.minimapCorner) ? MARGIN : h - widget - MARGIN;
+
+        // Parchment backing: frames the map and fills unexplored (transparent) map pixels.
+        g.blit(RenderPipelines.GUI_TEXTURED, MAP_BACKGROUND, wx, wy, 0f, 0f, widget, widget, widget, widget);
 
         // map() draws a 128x128 map (texture + decorations) at the current pose origin.
         Matrix3x2fStack pose = g.pose();
         pose.pushMatrix();
-        pose.translate(x, y);
+        pose.translate(wx + border, wy + border);
         pose.scale(size / 128f, size / 128f);
         g.map(state);
         pose.popMatrix();
