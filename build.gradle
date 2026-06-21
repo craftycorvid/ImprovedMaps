@@ -12,6 +12,11 @@ base {
 repositories {
 	maven { url = "https://maven.terraformersmc.com" }
 	maven { url = 'https://maven.nucleoid.xyz' }
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+		content { includeGroup "maven.modrinth" }
+	}
 }
 
 loom {
@@ -36,6 +41,10 @@ dependencies {
 	implementation "eu.pb4:polymer-resource-pack:${project.polymer_version}"
 	localRuntime "eu.pb4:polymer-autohost:${project.polymer_version}"
 	implementation include("xyz.nucleoid:server-translations-api:${project.server_translations_version}")
+
+	// Client-only: in-game config GUI (YACL) surfaced via Mod Menu.
+	clientImplementation "maven.modrinth:yacl:${project.yacl_version}"
+	clientImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {

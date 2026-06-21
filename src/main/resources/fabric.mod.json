@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"com.craftycorvid.improvedmaps.ImprovedMapsClient"
+		],
+		"modmenu": [
+			"com.craftycorvid.improvedmaps.ModMenuIntegration"
 		]
 	},
 	"mixins": [
@@ -40,6 +43,8 @@
 		"polymer-networking": "*"
 	},
 	"suggest": {
-		"better-nether-map": "*"
+		"better-nether-map": "*",
+		"modmenu": "*",
+		"yet_another_config_lib_v3": "*"
 	}
 }
