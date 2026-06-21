@@ -27,9 +27,9 @@ public class ModConfig {
     // Config values
     public int atlasMapCapacity = 512;
     public boolean updateAtlasWhenNotInHand = true;
-    public boolean minimapEnabled = false;
+    public boolean minimapEnabled = true;
     public MinimapCorner minimapCorner = MinimapCorner.TOP_RIGHT;
-    public int minimapSize = 128;
+    public int minimapSize = 96;
 
     // Reading and saving
     public static ModConfig loadConfig() {

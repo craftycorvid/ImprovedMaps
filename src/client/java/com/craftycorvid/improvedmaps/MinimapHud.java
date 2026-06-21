@@ -20,27 +20,31 @@ import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 
 public final class MinimapHud {
     private static final int MARGIN = 8;
-    private static final Identifier MAP_BACKGROUND =
-            Identifier.fromNamespaceAndPath("minecraft", "textures/map/map_background.png");
+    private static final Identifier MAP_BACKGROUND = Identifier.fromNamespaceAndPath("minecraft",
+            "textures/map/map_background.png");
     // Remembered main-hand hotbar slot of the last-held atlas; -1 = none.
     private static int trackedSlot = -1;
 
     // HudElement: called every frame during the GUI extract phase.
     public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
-        if (!MOD_CONFIG.minimapEnabled) return;
+        if (!MOD_CONFIG.minimapEnabled)
+            return;
         Minecraft mc = Minecraft.getInstance();
-        // No hideGui check needed: HUD elements render inside Hud.render, which the
-        // game skips entirely when the HUD is hidden (F1).
-        if (mc.player == null || mc.level == null) return;
+
+        if (mc.player == null || mc.level == null)
+            return;
 
         ItemStack atlas = resolveAtlas(mc);
-        if (atlas == null) return;
+        if (atlas == null)
+            return;
 
         MapId mapId = atlas.get(DataComponents.MAP_ID);
-        if (mapId == null) return;
+        if (mapId == null)
+            return;
 
         MapItemSavedData data = mc.level.getMapData(mapId);
-        if (data == null) return;
+        if (data == null)
+            return;
 
         MapRenderState state = new MapRenderState();
         mc.getMapRenderer().extractRenderState(mapId, data, state);
@@ -59,7 +63,8 @@ public final class MinimapHud {
         int wx = leftAligned(MOD_CONFIG.minimapCorner) ? MARGIN : w - widget - MARGIN;
         int wy = topAligned(MOD_CONFIG.minimapCorner) ? MARGIN : h - widget - MARGIN;
 
-        // Parchment backing: frames the map and fills unexplored (transparent) map pixels.
+        // Parchment backing: frames the map and fills unexplored (transparent) map
+        // pixels.
         g.blit(RenderPipelines.GUI_TEXTURED, MAP_BACKGROUND, wx, wy, 0f, 0f, widget, widget, widget, widget);
 
         // map() draws a 128x128 map (texture + decorations) at the current pose origin.
@@ -71,7 +76,8 @@ public final class MinimapHud {
         pose.popMatrix();
     }
 
-    // "Last atlas held": prefer a hand, else the remembered slot, else any atlas, else none.
+    // "Last atlas held": prefer a hand, else the remembered slot, else any atlas,
+    // else none.
     private static ItemStack resolveAtlas(Minecraft mc) {
         Inventory inv = mc.player.getInventory();
 
@@ -80,13 +86,16 @@ public final class MinimapHud {
             trackedSlot = inv.getSelectedSlot();
             return main;
         }
-        // Off-hand is always equipped, so an off-hand atlas counts as continuously held.
+        // Off-hand is always equipped, so an off-hand atlas counts as continuously
+        // held.
         ItemStack off = mc.player.getItemInHand(InteractionHand.OFF_HAND);
-        if (off.is(ImprovedMapsItems.ATLAS)) return off;
+        if (off.is(ImprovedMapsItems.ATLAS))
+            return off;
 
         if (trackedSlot >= 0 && trackedSlot < inv.getContainerSize()) {
             ItemStack s = inv.getItem(trackedSlot);
-            if (s.is(ImprovedMapsItems.ATLAS)) return s;
+            if (s.is(ImprovedMapsItems.ATLAS))
+                return s;
         }
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
