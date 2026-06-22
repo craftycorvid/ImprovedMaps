@@ -34,6 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
+import com.craftycorvid.improvedmaps.AtlasTooltipData;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
@@ -281,15 +282,17 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         return ItemUseAnimation.NONE;
     }
 
-    // Client-side rendering of the bundle fullness bar
-    public static float getFullnessDisplay(ItemStack stack) {
-        int usedSpace = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY).size();
-        return usedSpace * 1f / MOD_CONFIG.atlasMapCapacity;
-    }
-
+    // Render the bundle tooltip's fullness bar against atlasMapCapacity instead of the
+    // vanilla 64-item bundle weight. The client maps AtlasTooltipData -> a ClientBundleTooltip
+    // with this scaled fullness (see ImprovedMapsClient + ClientBundleTooltipMixin).
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        return super.getTooltipImage(stack);
+        BundleContents contents = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
+        if (contents.isEmpty())
+            return super.getTooltipImage(stack);
+        int used = Math.min(contents.size(), MOD_CONFIG.atlasMapCapacity);
+        return Optional.of(new AtlasTooltipData(contents,
+                org.apache.commons.lang3.math.Fraction.getFraction(used, MOD_CONFIG.atlasMapCapacity)));
     }
 
     @Override
