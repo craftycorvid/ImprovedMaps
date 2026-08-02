@@ -37,10 +37,12 @@ jobs:
           version: "${{env.VERSION}}"
           version-type: beta
           changelog: "${{env.CHANGE_LOG}}"
+          environment: client? | server
           dependencies: |
             fabric-api
-            polymer(optional)
+            polymer
             modmenu(optional)
+            yacl(optional)
 
           loaders: fabric
           files: |
