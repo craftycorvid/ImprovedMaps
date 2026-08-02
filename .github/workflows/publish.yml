@@ -2,11 +2,12 @@ name: Publish on GitHub & Modrinth
 on: [workflow_dispatch]
 
 env:
-  VERSION: 0.4.5
+  VERSION: 0.5
   RELEASE_NAME: Improved Maps 0.5 for Minecraft 26.2
   CHANGE_LOG: |
-    - Client-side minimap!
-    - Settings GUI
+    - Client-side minimap
+    - Client-side Settings GUI
+    - Show atlas empty maps in the cartography result on vanilla clients
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
 
@@ -18,7 +19,7 @@ jobs:
     needs: build
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: Artifacts
       - name: Publish (CurseForge/Modrinth/GitHub)
