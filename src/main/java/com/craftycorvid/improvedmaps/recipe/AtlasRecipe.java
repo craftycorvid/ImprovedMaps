@@ -20,6 +20,8 @@ import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 
+import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
+
 public class AtlasRecipe extends CustomRecipe {
     public static final AtlasRecipe INSTANCE = new AtlasRecipe();
     public static final MapCodec<AtlasRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
@@ -56,7 +58,7 @@ public class AtlasRecipe extends CustomRecipe {
                 .findFirst().orElse(null);
 
         BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
         builder.tryInsert(map);
         map.grow(1);
         atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());

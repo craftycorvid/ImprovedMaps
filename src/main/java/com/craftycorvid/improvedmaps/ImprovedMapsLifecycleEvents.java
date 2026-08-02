@@ -4,7 +4,6 @@ import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import net.minecraft.core.component.DataComponents;
@@ -24,9 +23,6 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 // Logic based on
 // https://github.com/Pepperoni-Jabroni/MapAtlases/blob/main/src/main/java/pepjebs/mapatlases/lifecycle/MapAtlasesServerLifecycleEvents.java
 public final class ImprovedMapsLifecycleEvents {
-    // Used to prevent Map creation spam consuming all Empty Maps on auto-create
-    private static final Semaphore mutex = new Semaphore(1);
-
     public static void ImprovedMapsServerTick(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.isRemoved() || player.isChangingDimension() || player.hasDisconnected())
@@ -59,7 +55,7 @@ public final class ImprovedMapsLifecycleEvents {
             BundleContents contents = atlas.get(DataComponents.BUNDLE_CONTENTS);
             if (contents.isEmpty()) {
                 BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
-                ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+                ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
 
                 int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
 
@@ -163,36 +159,19 @@ public final class ImprovedMapsLifecycleEvents {
         BundleContents bundleContents = atlas
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         BundleContents.Mutable builder = new BundleContents.Mutable(bundleContents);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(512);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
         int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
-        if (mutex.availablePermits() > 0 && (emptyCount > 0 || player.isCreative())) {
-            try {
-                mutex.acquire();
-                byte scale = activeState.scale;
-                int currentX = activeState.centerX;
-                int currentZ = activeState.centerZ;
-                int scaleWidth = (1 << scale) * 128;
-
-                int newX = Math.abs(currentX - playerX) > (scaleWidth / 2)
-                        ? currentX > playerX ? currentX - scaleWidth : currentX + scaleWidth
-                        : currentX;
-                int newZ = Math.abs(currentZ - playerZ) > (scaleWidth / 2)
-                        ? currentZ > playerZ ? currentZ - scaleWidth : currentZ + scaleWidth
-                        : currentZ;
-
-                // Make the new map
-                ItemStack newMap = MapItem.create(player.level(), newX, newZ,
-                        (byte) scale, true, false);
-                builder.tryInsert(newMap);
-                atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
-                if (!player.isCreative())
-                    atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
-                return newMap;
-            } catch (InterruptedException e) {
-                ImprovedMaps.LOGGER.warn(e.getMessage());
-            } finally {
-                mutex.release();
-            }
+        if (emptyCount > 0 || player.isCreative()) {
+            // Make the map the player is standing on. MapItem.create snaps to the vanilla map
+            // grid, so this lines up with every other map in the atlas - don't walk out from the
+            // nearest one a cell at a time, that mapped (and paid for) every region in between.
+            ItemStack newMap = MapItem.create(player.level(), playerX, playerZ,
+                    activeState.scale, true, false);
+            builder.tryInsert(newMap);
+            atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
+            if (!player.isCreative())
+                atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, emptyCount - 1);
+            return newMap;
         }
         return null;
     }

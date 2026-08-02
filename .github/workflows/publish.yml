@@ -8,6 +8,7 @@ env:
     - Client-side minimap
     - Client-side Settings GUI
     - Show atlas empty maps in the cartography result on vanilla clients
+    - Bugfixes
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
 
