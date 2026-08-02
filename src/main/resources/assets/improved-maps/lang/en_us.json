@@ -1,4 +1,8 @@
 {
     "item.improved-maps.atlas": "Atlas",
-    "itemGroup.improved-maps.atlas_tab": "Improved Maps"
+    "itemGroup.improved-maps.atlas_tab": "Improved Maps",
+    "key.category.improved-maps.atlas": "Improved Maps",
+    "key.improved-maps.open_atlas": "Open Atlas View",
+    "screen.improved-maps.atlas": "Atlas",
+    "screen.improved-maps.atlas.loading": "Loading maps..."
 }

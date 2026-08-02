@@ -14,6 +14,7 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
 ### (Optional) Client-side Features
 
 - **Minimap** - Your last selected Atlas can be displayed as a minimap if you install the mod client-side.
+- **Atlas View** - Press `M` (rebindable in Controls) to see every map in your Atlas stitched into one big map. Opens centred on you; scroll to zoom and drag to pan.
 - Proper display of Atlas' fullness bar
 
 ### How to use Atlases

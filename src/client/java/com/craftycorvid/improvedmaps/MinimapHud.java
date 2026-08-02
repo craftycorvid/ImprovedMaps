@@ -101,8 +101,8 @@ public final class MinimapHud {
     }
 
     // "Last atlas held": prefer a hand, else the remembered slot, else any atlas,
-    // else none.
-    private static ItemStack resolveAtlas(Minecraft mc) {
+    // else none. Also what the atlas grid view (AtlasScreen) opens on.
+    static ItemStack resolveAtlas(Minecraft mc) {
         Inventory inv = mc.player.getInventory();
 
         ItemStack main = mc.player.getItemInHand(InteractionHand.MAIN_HAND);
