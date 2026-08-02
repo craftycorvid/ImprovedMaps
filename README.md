@@ -8,13 +8,13 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
   - Fill it with empty maps and it will automatically create new maps as you explore off the edge of your current map.
   - Automatically switch to the relevant map when returning to previous areas.
   - Make a copy of the entire Atlas. Great for map walls!
-  - Fits up to 512 filled maps, and any number of empty maps
+  - Fits up to 512 filled maps(configurable), and any number of empty maps
 - **Map Information Tooltips** - See the map scale and center coordinates right from the tooltip
 
 ### (Optional) Client-side Features
 
 - **Minimap** - Your last selected Atlas can be displayed as a minimap if you install the mod client-side.
-- Fixes to the cartography table and bundle tooltip interactions
+- Proper display of Atlas' fullness bar
 
 ### How to use Atlases
 
@@ -36,8 +36,6 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
 
 ### Known Issues
 
-- Cartography table result slot doesn't work well. You can click the empty slot and get the correct result, it just won't preview
-  - Installing the mod client-side will fix this
 - Bundle tooltip on Atlas will show full once it hits 64 maps. You can still keep adding maps
   - Installing the mod client-side will fix this
 

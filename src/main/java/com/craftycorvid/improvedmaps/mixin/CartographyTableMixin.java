@@ -3,6 +3,7 @@ package com.craftycorvid.improvedmaps.mixin;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,7 +14,12 @@ import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CartographyTableMenu;
@@ -23,6 +29,8 @@ import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+
+import static com.craftycorvid.improvedmaps.ImprovedMapsNetworking.PLAYERS_WITH_CLIENT;
 
 @Mixin(CartographyTableMenu.class)
 public abstract class CartographyTableMixin extends AbstractContainerMenu {
@@ -82,6 +90,53 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
 
             ci.cancel();
         }
+    }
+
+    @Unique
+    private Player improvedmaps$owner;
+
+    @Unique
+    private boolean improvedmaps$phantomShown;
+
+    @Inject(method = "<init>(ILnet/minecraft/world/entity/player/Inventory;Lnet/minecraft/world/inventory/ContainerLevelAccess;)V", at = @At("TAIL"))
+    private void rememberOwner(int syncId, Inventory inventory, ContainerLevelAccess context,
+            CallbackInfo ci) {
+        this.improvedmaps$owner = inventory.player;
+    }
+
+    // Vanilla's slotsChanged clears the result whenever an input slot is empty, and that branch
+    // runs client-side too - so a client without the mod wipes the empty-map result the moment it
+    // arrives, since pulling maps out of an atlas needs no material. Show those clients a phantom
+    // material item to stop their menu from clearing it. The lie lives only in this packet: the
+    // server-side slot stays empty, so nothing can leak into an inventory when the screen closes.
+    @Inject(method = "slotsChanged", at = @At("HEAD"))
+    private void syncPhantomMaterialForVanillaClients(Container inventory, CallbackInfo ci) {
+        if (!(this.improvedmaps$owner instanceof ServerPlayer player)
+                || PLAYERS_WITH_CLIENT.contains(player.getUUID()))
+            return;
+
+        ItemStack atlas = this.getSlot(CartographyTableMenu.MAP_SLOT).getItem();
+        ItemStack material = this.getSlot(CartographyTableMenu.ADDITIONAL_SLOT).getItem();
+        // Decided from the inputs alone, so this stays correct however the result turns out.
+        boolean show = atlas.is(ImprovedMapsItems.ATLAS) && material.isEmpty()
+                && atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0) > 0;
+        if (show == this.improvedmaps$phantomShown)
+            return;
+        this.improvedmaps$phantomShown = show;
+
+        ItemStack shown = material; // hiding: the real stack, empty unless a material was placed
+        if (show) {
+            shown = new ItemStack(Items.BOOK);
+            shown.set(DataComponents.CUSTOM_NAME, Component.literal("Empty Maps in Atlas"));
+        }
+        // Sent from HEAD so it lands before the result: a result reaching a client whose material
+        // slot still looks empty is cleared on arrival, and the server - believing the client has
+        // it - never sends it again.
+        player.connection.send(new ClientboundContainerSetSlotPacket(this.containerId,
+                this.incrementStateId(), CartographyTableMenu.ADDITIONAL_SLOT, shown));
+        // Forget that the client has the result, so the next broadcast re-sends it. Recovers the
+        // preview when a full resync has replaced the phantom with the real, empty slot.
+        this.setRemoteSlot(CartographyTableMenu.RESULT_SLOT, ItemStack.EMPTY);
     }
 
     // to access the Cartography Table screen and its data in the ResultSlotMixin
