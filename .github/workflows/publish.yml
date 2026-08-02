@@ -34,7 +34,7 @@ jobs:
 
           name: "${{env.RELEASE_NAME}}"
           version: "${{env.VERSION}}"
-          version-type: alpha
+          version-type: beta
           changelog: "${{env.CHANGE_LOG}}"
           dependencies: |
             fabric-api
