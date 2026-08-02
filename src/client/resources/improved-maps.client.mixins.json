@@ -3,7 +3,8 @@
 	"package": "com.craftycorvid.improvedmaps.mixin.client",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"ClientBundleTooltipMixin"
+		"ClientBundleTooltipMixin",
+		"ToastManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

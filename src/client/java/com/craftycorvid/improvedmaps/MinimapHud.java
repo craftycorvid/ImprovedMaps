@@ -27,22 +27,12 @@ public final class MinimapHud {
 
     // HudElement: called every frame during the GUI extract phase.
     public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
-        if (!MOD_CONFIG.minimapEnabled)
-            return;
         Minecraft mc = Minecraft.getInstance();
-
-        if (mc.player == null || mc.level == null)
-            return;
-
-        ItemStack atlas = resolveAtlas(mc);
-        if (atlas == null)
-            return;
-
-        MapId mapId = atlas.get(DataComponents.MAP_ID);
+        MapId mapId = activeMapId(mc);
         if (mapId == null)
             return;
 
-        MapItemSavedData data = mc.level.getMapData(mapId);
+        MapItemSavedData data = mc.level == null ? null : mc.level.getMapData(mapId);
         if (data == null)
             return;
 
@@ -55,8 +45,8 @@ public final class MinimapHud {
             decoration.renderOnFrame = true;
         }
 
-        int size = (int) Math.clamp(MOD_CONFIG.minimapSize, 16, 512);
-        int border = Math.max(2, Math.round(size / 16f)); // ~8px paper border at size 128
+        int size = size();
+        int border = border(size);
         int widget = size + border * 2;
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
@@ -74,6 +64,40 @@ public final class MinimapHud {
         pose.scale(size / 128f, size / 128f);
         g.map(state);
         pose.popMatrix();
+    }
+
+    // Width the minimap reserves along the right screen edge this frame, or 0 when
+    // it isn't drawing there. Vanilla's top-right HUD (status effects, toasts) is
+    // shifted left by this so the minimap doesn't cover it.
+    public static int rightInset() {
+        if (MOD_CONFIG.minimapCorner != MinimapCorner.TOP_RIGHT)
+            return 0;
+        if (activeMapId(Minecraft.getInstance()) == null)
+            return 0;
+        int size = size();
+        return size + border(size) * 2 + MARGIN * 2;
+    }
+
+    // The map the minimap draws this frame, or null when it draws nothing.
+    private static MapId activeMapId(Minecraft mc) {
+        if (!MOD_CONFIG.minimapEnabled || mc.player == null || mc.level == null)
+            return null;
+
+        ItemStack atlas = resolveAtlas(mc);
+        if (atlas == null)
+            return null;
+
+        MapId mapId = atlas.get(DataComponents.MAP_ID);
+        // Map data arrives from the server a little after the id does.
+        return mapId != null && mc.level.getMapData(mapId) != null ? mapId : null;
+    }
+
+    private static int size() {
+        return (int) Math.clamp(MOD_CONFIG.minimapSize, 16, 512);
+    }
+
+    private static int border(int size) {
+        return Math.max(2, Math.round(size / 16f)); // ~8px paper border at size 128
     }
 
     // "Last atlas held": prefer a hand, else the remembered slot, else any atlas,
