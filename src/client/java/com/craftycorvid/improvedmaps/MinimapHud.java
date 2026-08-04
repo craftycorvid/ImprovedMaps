@@ -20,7 +20,8 @@ import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 
 public final class MinimapHud {
     private static final int MARGIN = 8;
-    private static final Identifier MAP_BACKGROUND = Identifier.fromNamespaceAndPath("minecraft",
+    // Also the page of the atlas grid view (AtlasScreen), nine-sliced there.
+    static final Identifier MAP_BACKGROUND = Identifier.fromNamespaceAndPath("minecraft",
             "textures/map/map_background.png");
     // Remembered main-hand hotbar slot of the last-held atlas; -1 = none.
     private static int trackedSlot = -1;

@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -24,11 +25,33 @@ import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.MapCenter;
 // Every map in the tracked atlas, stitched into one big map in its true grid layout.
 public final class AtlasScreen extends Screen {
     private static final int MAP_PX = 128;
-    private static final int MARGIN = 16;
     // Screen pixels per map pixel: how far in scrolling can go, and how much the view opens showing
     // - the active map plus its neighbours on every side.
     private static final double MAX_SCALE = 4.0;
     private static final int OPENING_CELLS = 3;
+
+    // The book: a leather cover with a dark spine down the middle and gold corner clasps, with the
+    // parchment the minimap uses laid on top as the page. Colours are sampled from vanilla's
+    // enchanting table book texture - the one the lectern renders - so it sits beside vanilla GUIs.
+    private static final int COVER_MARGIN = 6; // screen edge to cover
+    // Width to height of the cover. Fixed like every vanilla screen, so the book keeps its shape
+    // instead of stretching into a letterbox on a wide monitor; it grows to fit whichever side runs
+    // out first. Slightly wide, the way an open book with a centre spine sits.
+    private static final double COVER_ASPECT = 4.0 / 3.0;
+    // Cover to parchment: the band of cover left showing. Kept narrow so the page gets the room -
+    // the spine and clasps are sized off the cover instead, so slimming this does not shrink them.
+    private static final int MIN_PAGE_INSET = 12;
+    private static final int PAGE_INSET_FRACTION = 18;
+    private static final int PARCHMENT_TEXTURE = 64;
+    private static final int PARCHMENT_BORDER = 8; // texels kept unstretched by the nine-slice
+    private static final int PARCHMENT_SCALE = 2; // screen pixels per border texel
+    private static final int BORDER_PX = PARCHMENT_BORDER * PARCHMENT_SCALE;
+    private static final int COVER = 0xFFA76E2D;
+    private static final int COVER_SHADOW = 0xFF774E22;
+    private static final int COVER_HIGHLIGHT = 0xFFC58439;
+    private static final int SPINE_EDGE = 0xFF875622;
+    private static final int CLASP = 0xFFFFD800;
+    private static final int CLASP_SHADE = 0xFFFFB100;
     private static final Component LOADING =
             Component.translatable("screen.improved-maps.atlas.loading");
     // A map's centre never reaches the client on its own, so the server sends it. Worth keeping
@@ -44,6 +67,18 @@ public final class AtlasScreen extends Screen {
     // Grid size in map pixels, from the last frame drawn - zoom and pan need it.
     private int gridWidth;
     private int gridHeight;
+    // The cover, at a fixed aspect and centred on screen.
+    private int coverX;
+    private int coverY;
+    private int coverW;
+    private int coverH;
+    // Band of cover showing around the parchment; the spine and clasps are sized off it.
+    private int pageInset;
+    // The flat middle of the parchment: where maps are laid out, framed and clipped.
+    private int viewX;
+    private int viewY;
+    private int viewW;
+    private int viewH;
     // Cleared on open so the view re-frames on the player once their map has arrived.
     private boolean framed;
 
@@ -62,6 +97,21 @@ public final class AtlasScreen extends Screen {
 
     @Override
     protected void init() {
+        // Laid out before anything can bail, so the book still draws when there is nothing to show.
+        int availW = Math.max(MAP_PX, width - COVER_MARGIN * 2);
+        int availH = Math.max(MAP_PX, height - COVER_MARGIN * 2);
+        coverW = Math.min(availW, (int) (availH * COVER_ASPECT));
+        coverH = Math.min(availH, (int) (availW / COVER_ASPECT));
+        coverX = (width - coverW) / 2;
+        coverY = (height - coverH) / 2;
+
+        pageInset = Math.max(MIN_PAGE_INSET, Math.min(coverW, coverH) / PAGE_INSET_FRACTION);
+        int edge = pageInset + BORDER_PX;
+        viewX = coverX + edge;
+        viewY = coverY + edge;
+        viewW = Math.max(MAP_PX, coverW - edge * 2);
+        viewH = Math.max(MAP_PX, coverH - edge * 2);
+
         Minecraft mc = this.minecraft;
         if (mc == null || mc.level == null || mc.player == null)
             return;
@@ -95,6 +145,7 @@ public final class AtlasScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY,
             float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
+        drawBook(g);
         Minecraft mc = this.minecraft;
         if (mc == null || mc.level == null)
             return;
@@ -114,8 +165,9 @@ public final class AtlasScreen extends Screen {
             maxRow = Math.max(maxRow, row(center, data));
         }
         if (minCol > maxCol) { // nothing placeable yet - the reply is still in flight
-            g.text(font, LOADING.getVisualOrderText(), (width - font.width(LOADING)) / 2,
-                    height / 2, -1, true);
+            g.text(font, LOADING.getVisualOrderText(),
+                    viewX + (viewW - font.width(LOADING)) / 2, viewY + viewH / 2, COVER_SHADOW,
+                    false);
             return;
         }
 
@@ -128,6 +180,8 @@ public final class AtlasScreen extends Screen {
         }
         float pixelScale = (float) viewScale;
 
+        // Panned or zoomed maps stop at the parchment rather than spilling over the cover.
+        g.enableScissor(viewX, viewY, viewX + viewW, viewY + viewH);
         Matrix3x2fStack pose = g.pose();
         pose.pushMatrix();
         pose.translate((float) originX(pixelScale), (float) originY(pixelScale));
@@ -158,6 +212,86 @@ public final class AtlasScreen extends Screen {
             pose.popMatrix();
         }
         pose.popMatrix();
+        g.disableScissor();
+    }
+
+    private void drawBook(GuiGraphicsExtractor g) {
+        int x0 = coverX;
+        int y0 = coverY;
+        int x1 = coverX + coverW;
+        int y1 = coverY + coverH;
+
+        g.fill(x0, y0, x1, y1, COVER_SHADOW);
+        g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, COVER);
+        g.fill(x0 + 2, y0 + 2, x1 - 2, y0 + 3, COVER_HIGHLIGHT);
+        g.fill(x0 + 2, y0 + 2, x0 + 3, y1 - 2, COVER_HIGHLIGHT);
+
+        int half = Math.max(3, coverH / 40);
+        int spine = (x0 + x1) / 2;
+        g.fill(spine - half, y0 + 2, spine + half, y1 - 2, COVER_SHADOW);
+        g.fill(spine - half - 1, y0 + 2, spine - half, y1 - 2, SPINE_EDGE);
+        g.fill(spine + half, y0 + 2, spine + half + 1, y1 - 2, SPINE_EDGE);
+
+        // Clasp arms run along the cover edge, so only their thickness has to fit the inset band.
+        int arm = Math.max(8, Math.min(coverW, coverH) / 16);
+        int thick = Math.max(3, Math.min(arm / 5, pageInset - 2));
+        clasp(g, x0 + 3, y0 + 3, 1, 1, arm, thick);
+        clasp(g, x1 - 3, y0 + 3, -1, 1, arm, thick);
+        clasp(g, x0 + 3, y1 - 3, 1, -1, arm, thick);
+        clasp(g, x1 - 3, y1 - 3, -1, -1, arm, thick);
+
+        parchment(g);
+    }
+
+    // One corner clasp: an L reaching along both edges from (x, y), pointing (dx, dy).
+    private static void clasp(GuiGraphicsExtractor g, int x, int y, int dx, int dy, int arm,
+            int thick) {
+        int armX = x + arm * dx;
+        int armY = y + arm * dy;
+        int innerX = x + thick * dx;
+        int innerY = y + thick * dy;
+        rect(g, x, y, armX, innerY, CLASP);
+        rect(g, x, y, innerX, armY, CLASP);
+        // A darker inner edge, so it reads as metal rather than a flat block.
+        rect(g, x, innerY - dy, armX, innerY, CLASP_SHADE);
+        rect(g, innerX - dx, y, innerX, armY, CLASP_SHADE);
+    }
+
+    // map_background.png is a flat interior inside a ragged torn edge, so the middle stretches and
+    // the border stays at a fixed scale; stretching the whole texture turns a 3px edge into chunky
+    // teeth once the page is most of the screen.
+    private void parchment(GuiGraphicsExtractor g) {
+        int pageX = viewX - BORDER_PX;
+        int pageY = viewY - BORDER_PX;
+        int inner = PARCHMENT_TEXTURE - PARCHMENT_BORDER * 2;
+        int far = PARCHMENT_TEXTURE - PARCHMENT_BORDER;
+
+        slice(g, 0, 0, PARCHMENT_BORDER, PARCHMENT_BORDER, pageX, pageY, BORDER_PX, BORDER_PX);
+        slice(g, far, 0, PARCHMENT_BORDER, PARCHMENT_BORDER, viewX + viewW, pageY, BORDER_PX,
+                BORDER_PX);
+        slice(g, 0, far, PARCHMENT_BORDER, PARCHMENT_BORDER, pageX, viewY + viewH, BORDER_PX,
+                BORDER_PX);
+        slice(g, far, far, PARCHMENT_BORDER, PARCHMENT_BORDER, viewX + viewW, viewY + viewH,
+                BORDER_PX, BORDER_PX);
+
+        slice(g, PARCHMENT_BORDER, 0, inner, PARCHMENT_BORDER, viewX, pageY, viewW, BORDER_PX);
+        slice(g, PARCHMENT_BORDER, far, inner, PARCHMENT_BORDER, viewX, viewY + viewH, viewW,
+                BORDER_PX);
+        slice(g, 0, PARCHMENT_BORDER, PARCHMENT_BORDER, inner, pageX, viewY, BORDER_PX, viewH);
+        slice(g, far, PARCHMENT_BORDER, PARCHMENT_BORDER, inner, viewX + viewW, viewY, BORDER_PX,
+                viewH);
+
+        slice(g, PARCHMENT_BORDER, PARCHMENT_BORDER, inner, inner, viewX, viewY, viewW, viewH);
+    }
+
+    private static void slice(GuiGraphicsExtractor g, int u, int v, int regionW, int regionH,
+            int x, int y, int w, int h) {
+        g.blit(RenderPipelines.GUI_TEXTURED, MinimapHud.MAP_BACKGROUND, x, y, u, v, w, h, regionW,
+                regionH, PARCHMENT_TEXTURE, PARCHMENT_TEXTURE);
+    }
+
+    private static void rect(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int colour) {
+        g.fill(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2), colour);
     }
 
     @Override
@@ -173,8 +307,8 @@ public final class AtlasScreen extends Screen {
         // Zoom about the cursor: whatever grid point is under it stays under it.
         double gridX = (mouseX - originX(before)) / before;
         double gridY = (mouseY - originY(before)) / before;
-        panX = mouseX - gridX * viewScale - (width - gridWidth * viewScale) / 2;
-        panY = mouseY - gridY * viewScale - (height - gridHeight * viewScale) / 2;
+        panX = mouseX - viewX - gridX * viewScale - (viewW - gridWidth * viewScale) / 2;
+        panY = mouseY - viewY - gridY * viewScale - (viewH - gridHeight * viewScale) / 2;
         clampPan(viewScale);
         return true;
     }
@@ -230,19 +364,19 @@ public final class AtlasScreen extends Screen {
                 + (mc.player.getZ() - center.z()) / blocksPerPixel + MAP_PX / 2.0;
 
         viewScale = Math.clamp(openingScale(), fitScale(), maxScale());
-        panX = width / 2.0 - playerX * viewScale - (width - gridWidth * viewScale) / 2;
-        panY = height / 2.0 - playerY * viewScale - (height - gridHeight * viewScale) / 2;
+        panX = viewW / 2.0 - playerX * viewScale - (viewW - gridWidth * viewScale) / 2;
+        panY = viewH / 2.0 - playerY * viewScale - (viewH - gridHeight * viewScale) / 2;
         clampPan(viewScale);
         return true;
     }
 
-    // Fitted to the shorter side, so every neighbour of the active map is on screen.
+    // Fitted to the shorter side, so every neighbour of the active map is on the page.
     private double openingScale() {
-        return Math.min(width - MARGIN * 2.0, height - MARGIN * 2.0) / (OPENING_CELLS * MAP_PX);
+        return Math.min(viewW, viewH) / (double) (OPENING_CELLS * MAP_PX);
     }
 
     private double fitScale() {
-        return Math.min((width - MARGIN * 2.0) / gridWidth, (height - MARGIN * 2.0) / gridHeight);
+        return Math.min(viewW / (double) gridWidth, viewH / (double) gridHeight);
     }
 
     // A tiny atlas can fit on screen larger than MAX_SCALE; never clamp below what already fits.
@@ -251,17 +385,17 @@ public final class AtlasScreen extends Screen {
     }
 
     private double originX(double pixelScale) {
-        return (width - gridWidth * pixelScale) / 2 + panX;
+        return viewX + (viewW - gridWidth * pixelScale) / 2 + panX;
     }
 
     private double originY(double pixelScale) {
-        return (height - gridHeight * pixelScale) / 2 + panY;
+        return viewY + (viewH - gridHeight * pixelScale) / 2 + panY;
     }
 
-    // Panning stops at the grid's edges; when the grid fits on screen it stays centred.
+    // Panning stops at the grid's edges; when the grid fits on the page it stays centred.
     private void clampPan(double pixelScale) {
-        panX = clampAxis(panX, gridWidth * pixelScale, width);
-        panY = clampAxis(panY, gridHeight * pixelScale, height);
+        panX = clampAxis(panX, gridWidth * pixelScale, viewW);
+        panY = clampAxis(panY, gridHeight * pixelScale, viewH);
     }
 
     private static double clampAxis(double pan, double scaledSize, int viewport) {
