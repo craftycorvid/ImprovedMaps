@@ -2,12 +2,10 @@ name: Publish on GitHub & Modrinth
 on: [workflow_dispatch]
 
 env:
-  VERSION: 0.5
-  RELEASE_NAME: Improved Maps 0.5 for Minecraft 26.2
+  VERSION: 0.6
+  RELEASE_NAME: Improved Maps 0.6 for Minecraft 26.2
   CHANGE_LOG: |
-    - Client-side minimap
-    - Client-side Settings GUI
-    - Show atlas empty maps in the cartography result on vanilla clients
+    - Client-side Atlas View
     - Bugfixes
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
