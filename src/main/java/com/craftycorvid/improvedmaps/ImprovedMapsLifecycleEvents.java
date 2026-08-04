@@ -52,17 +52,20 @@ public final class ImprovedMapsLifecycleEvents {
 
             atlas.set(ImprovedMapsComponentTypes.ATLAS_INITIALIZED, true);
 
-            BundleContents contents = atlas.get(DataComponents.BUNDLE_CONTENTS);
+            BundleContents contents = atlas
+                    .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
             if (contents.isEmpty()) {
                 BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
                 ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
 
-                int emptyCount = atlas.get(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT);
+                int emptyCount = atlas
+                        .getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
 
                 if (emptyCount > 0 || player.isCreative()) {
                     ItemStack newMap = MapItem.create(player.level(),
                             Mth.floor(player.getX()), Mth.floor(player.getZ()),
-                            atlas.get(ImprovedMapsComponentTypes.ATLAS_SCALE), true, false);
+                            atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) 0),
+                            true, false);
 
                     builder.tryInsert(newMap);
                     atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());

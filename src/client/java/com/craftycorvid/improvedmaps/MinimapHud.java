@@ -4,6 +4,8 @@ import org.joml.Matrix3x2fStack;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponents;
@@ -33,7 +35,8 @@ public final class MinimapHud {
         if (mapId == null)
             return;
 
-        MapItemSavedData data = mc.level == null ? null : mc.level.getMapData(mapId);
+        ClientLevel level = mc.level;
+        MapItemSavedData data = level == null ? null : level.getMapData(mapId);
         if (data == null)
             return;
 
@@ -81,16 +84,18 @@ public final class MinimapHud {
 
     // The map the minimap draws this frame, or null when it draws nothing.
     private static MapId activeMapId(Minecraft mc) {
-        if (!MOD_CONFIG.minimapEnabled || mc.player == null || mc.level == null)
+        LocalPlayer player = mc.player;
+        ClientLevel level = mc.level;
+        if (!MOD_CONFIG.minimapEnabled || player == null || level == null)
             return null;
 
-        ItemStack atlas = resolveAtlas(mc);
+        ItemStack atlas = resolveAtlas(player);
         if (atlas == null)
             return null;
 
         MapId mapId = atlas.get(DataComponents.MAP_ID);
         // Map data arrives from the server a little after the id does.
-        return mapId != null && mc.level.getMapData(mapId) != null ? mapId : null;
+        return mapId != null && level.getMapData(mapId) != null ? mapId : null;
     }
 
     private static int size() {
@@ -103,17 +108,17 @@ public final class MinimapHud {
 
     // "Last atlas held": prefer a hand, else the remembered slot, else any atlas,
     // else none. Also what the atlas grid view (AtlasScreen) opens on.
-    static ItemStack resolveAtlas(Minecraft mc) {
-        Inventory inv = mc.player.getInventory();
+    static ItemStack resolveAtlas(LocalPlayer player) {
+        Inventory inv = player.getInventory();
 
-        ItemStack main = mc.player.getItemInHand(InteractionHand.MAIN_HAND);
+        ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (main.is(ImprovedMapsItems.ATLAS)) {
             trackedSlot = inv.getSelectedSlot();
             return main;
         }
         // Off-hand is always equipped, so an off-hand atlas counts as continuously
         // held.
-        ItemStack off = mc.player.getItemInHand(InteractionHand.OFF_HAND);
+        ItemStack off = player.getItemInHand(InteractionHand.OFF_HAND);
         if (off.is(ImprovedMapsItems.ATLAS))
             return off;
 

@@ -29,7 +29,7 @@ public class ImprovedMapsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (OPEN_ATLAS.consumeClick()) {
 				if (client.gui.screen() == null && client.player != null
-						&& MinimapHud.resolveAtlas(client) != null)
+						&& MinimapHud.resolveAtlas(client.player) != null)
 					client.setScreenAndShow(new AtlasScreen());
 			}
 		});

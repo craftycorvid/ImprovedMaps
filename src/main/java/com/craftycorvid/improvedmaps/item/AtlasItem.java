@@ -145,7 +145,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) -1);
                 MapItemSavedData mapState = MapItem.getSavedData(itemStack, player.level());
 
-                if (mapState.scale != scale
+                if (mapState == null || mapState.scale != scale
                         || !mapState.dimension.identifier().toString().equals(dimension))
                     return false;
 
@@ -203,7 +203,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 Byte scale = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, (byte) 0);
                 MapItemSavedData mapState = MapItem.getSavedData(otherStack, player.level());
 
-                if (mapState.scale != scale
+                if (mapState == null || mapState.scale != scale
                         || !mapState.dimension.identifier().toString().equals(dimension)) {
                     BundleItem.playInsertFailSound(player);
                     return false;
@@ -258,7 +258,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             Level world = context.getLevel();
             if (world instanceof net.minecraft.server.level.ServerLevel) {
                 MapId mapIdComponent = context.getItemInHand().get(DataComponents.MAP_ID);
-                MapItemSavedData mapState = world.getMapData(mapIdComponent);
+                MapItemSavedData mapState = MapItem.getSavedData(mapIdComponent, world);
                 if (mapState != null
                         && !mapState.toggleBanner(context.getLevel(), context.getClickedPos())) {
                     return InteractionResult.FAIL;

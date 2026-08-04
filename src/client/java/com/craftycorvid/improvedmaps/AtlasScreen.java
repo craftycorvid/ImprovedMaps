@@ -10,6 +10,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponents;
@@ -113,10 +115,12 @@ public final class AtlasScreen extends Screen {
         viewH = Math.max(MAP_PX, coverH - edge * 2);
 
         Minecraft mc = this.minecraft;
-        if (mc == null || mc.level == null || mc.player == null)
+        ClientLevel level = mc.level;
+        LocalPlayer player = mc.player;
+        if (level == null || player == null)
             return;
 
-        ItemStack atlas = MinimapHud.resolveAtlas(mc);
+        ItemStack atlas = MinimapHud.resolveAtlas(player);
         if (atlas == null)
             return;
 
@@ -135,7 +139,7 @@ public final class AtlasScreen extends Screen {
         // Batched, because the request codec refuses (and the connection dies on) a longer list;
         // an atlas past that size finishes filling in the next time the view is opened.
         List<MapId> missing = ids.stream()
-                .filter(id -> !CENTERS.containsKey(id) || mc.level.getMapData(id) == null)
+                .filter(id -> !CENTERS.containsKey(id) || level.getMapData(id) == null)
                 .limit(ImprovedMapsNetworking.MAX_REQUESTED_MAPS).toList();
         if (!missing.isEmpty() && ClientPlayNetworking.canSend(AtlasViewRequest.TYPE))
             ClientPlayNetworking.send(new AtlasViewRequest(missing));
@@ -147,7 +151,8 @@ public final class AtlasScreen extends Screen {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         drawBook(g);
         Minecraft mc = this.minecraft;
-        if (mc == null || mc.level == null)
+        ClientLevel level = mc.level;
+        if (level == null)
             return;
 
         int minCol = Integer.MAX_VALUE;
@@ -156,7 +161,7 @@ public final class AtlasScreen extends Screen {
         int maxRow = Integer.MIN_VALUE;
         for (MapId id : ids) {
             MapCenter center = CENTERS.get(id);
-            MapItemSavedData data = center == null ? null : mc.level.getMapData(id);
+            MapItemSavedData data = center == null ? null : level.getMapData(id);
             if (data == null)
                 continue;
             minCol = Math.min(minCol, col(center, data));
@@ -176,7 +181,7 @@ public final class AtlasScreen extends Screen {
         if (!framed) {
             // Show the whole grid until the active map lands, then frame on the player.
             viewScale = fitScale();
-            framed = frameOnPlayer(mc, minCol, minRow);
+            framed = frameOnPlayer(level, mc.player, minCol, minRow);
         }
         float pixelScale = (float) viewScale;
 
@@ -188,7 +193,7 @@ public final class AtlasScreen extends Screen {
         pose.scale(pixelScale, pixelScale);
         for (MapId id : ids) {
             MapCenter center = CENTERS.get(id);
-            MapItemSavedData data = center == null ? null : mc.level.getMapData(id);
+            MapItemSavedData data = center == null ? null : level.getMapData(id);
             if (data == null)
                 continue;
 
@@ -350,18 +355,21 @@ public final class AtlasScreen extends Screen {
 
     // Opens centred on the player, zoomed so the active map and its neighbours fill the view. Fails
     // while the active map's centre or pixels are still in flight, so the caller retries next frame.
-    private boolean frameOnPlayer(Minecraft mc, int minCol, int minRow) {
-        MapCenter center = activeMapId == null ? null : CENTERS.get(activeMapId);
-        MapItemSavedData data = center == null ? null : mc.level.getMapData(activeMapId);
-        if (data == null || mc.player == null)
+    private boolean frameOnPlayer(ClientLevel level, LocalPlayer player, int minCol, int minRow) {
+        MapId id = activeMapId;
+        if (id == null || player == null)
+            return false;
+        MapCenter center = CENTERS.get(id);
+        MapItemSavedData data = level.getMapData(id);
+        if (center == null || data == null)
             return false;
 
         // Where the player stands in grid pixels: their map's cell, plus their spot inside it.
         int blocksPerPixel = 1 << data.scale;
         double playerX = (col(center, data) - minCol) * MAP_PX
-                + (mc.player.getX() - center.x()) / blocksPerPixel + MAP_PX / 2.0;
+                + (player.getX() - center.x()) / blocksPerPixel + MAP_PX / 2.0;
         double playerY = (row(center, data) - minRow) * MAP_PX
-                + (mc.player.getZ() - center.z()) / blocksPerPixel + MAP_PX / 2.0;
+                + (player.getZ() - center.z()) / blocksPerPixel + MAP_PX / 2.0;
 
         viewScale = Math.clamp(openingScale(), fitScale(), maxScale());
         panX = viewW / 2.0 - playerX * viewScale - (viewW - gridWidth * viewScale) / 2;

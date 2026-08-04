@@ -7,6 +7,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
@@ -27,10 +28,11 @@ public final class ImprovedMapsModifyVanillaItems {
             if (original.is(Items.FILLED_MAP)) {
                 ItemStack out = original.copy();
                 List<Component> loreTexts = Lists.newArrayList();
-                if (PolymerCommonUtils.getPlayer(context) == null) {
+                ServerPlayer player = PolymerCommonUtils.getPlayer(context);
+                if (player == null) {
                     return client;
                 }
-                ServerLevel world = PolymerCommonUtils.getPlayer(context).level();
+                ServerLevel world = player.level();
                 MapItemSavedData mapState = MapItem.getSavedData(out, world);
 
                 if (mapState != null) {
