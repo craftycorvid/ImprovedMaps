@@ -2,8 +2,10 @@ package com.craftycorvid.improvedmaps;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.joml.Matrix3x2fStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -61,6 +63,10 @@ public final class AtlasScreen extends Screen {
     private static final Map<MapId, MapCenter> CENTERS = new HashMap<>();
 
     private final List<MapId> ids = new ArrayList<>();
+    // Maps already asked the server for, so a tick-by-tick re-read does not re-ask.
+    private final Set<MapId> requested = new HashSet<>();
+    // The bundle the ids were last built from; a sync replaces the instance.
+    private BundleContents lastContents;
     // The atlas's selected map - the only one whose player marker is kept up to date.
     private MapId activeMapId;
     private double viewScale;
@@ -114,6 +120,20 @@ public final class AtlasScreen extends Screen {
         viewW = Math.max(MAP_PX, coverW - edge * 2);
         viewH = Math.max(MAP_PX, coverH - edge * 2);
 
+        framed = false;
+        readAtlas();
+    }
+
+    // The atlas keeps changing under an open screen - the player can still be carried along by a
+    // boat, a horse or the current, and crossing into another region switches which map is selected
+    // and can mint a new one. Re-read it every tick, or the marker stays pinned to whichever map was
+    // selected when the screen opened, stranded at that map's edge once the player walks off it.
+    @Override
+    public void tick() {
+        readAtlas();
+    }
+
+    private void readAtlas() {
         Minecraft mc = this.minecraft;
         ClientLevel level = mc.level;
         LocalPlayer player = mc.player;
@@ -124,25 +144,33 @@ public final class AtlasScreen extends Screen {
         if (atlas == null)
             return;
 
-        ids.clear();
-        framed = false;
         activeMapId = atlas.get(DataComponents.MAP_ID);
-        atlas.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY).itemCopyStream()
-                .forEach(map -> {
-                    MapId id = map.get(DataComponents.MAP_ID);
-                    if (id != null)
-                        ids.add(id);
-                });
+        BundleContents contents =
+                atlas.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
+        // Contents are only rebuilt when the component itself is replaced, which is what a sync
+        // does; itemCopyStream copies every stack, and an atlas holds up to atlasMapCapacity.
+        if (contents != lastContents) {
+            lastContents = contents;
+            ids.clear();
+            contents.itemCopyStream().forEach(map -> {
+                MapId id = map.get(DataComponents.MAP_ID);
+                if (id != null)
+                    ids.add(id);
+            });
+        }
 
         // The client is only ever sent the atlas's active map, and never any map's centre, so ask
-        // for whatever is missing. Both halves arrive per map, so this asks once per map per world.
-        // Batched, because the request codec refuses (and the connection dies on) a longer list;
-        // an atlas past that size finishes filling in the next time the view is opened.
-        List<MapId> missing = ids.stream()
+        // for whatever is missing. Batched, because the request codec refuses (and the connection
+        // dies on) a longer list; an atlas past that size finishes filling on the next request.
+        // Asked for once each: without that, re-reading every tick would be a packet every tick
+        // while the reply is still on its way.
+        List<MapId> missing = ids.stream().filter(id -> !requested.contains(id))
                 .filter(id -> !CENTERS.containsKey(id) || level.getMapData(id) == null)
                 .limit(ImprovedMapsNetworking.MAX_REQUESTED_MAPS).toList();
-        if (!missing.isEmpty() && ClientPlayNetworking.canSend(AtlasViewRequest.TYPE))
+        if (!missing.isEmpty() && ClientPlayNetworking.canSend(AtlasViewRequest.TYPE)) {
             ClientPlayNetworking.send(new AtlasViewRequest(missing));
+            requested.addAll(missing);
+        }
     }
 
     @Override
