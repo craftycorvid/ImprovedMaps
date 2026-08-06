@@ -54,8 +54,8 @@ public final class MinimapHud {
         int widget = size + border * 2;
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
-        int wx = leftAligned(MOD_CONFIG.minimapCorner) ? MARGIN : w - widget - MARGIN;
-        int wy = topAligned(MOD_CONFIG.minimapCorner) ? MARGIN : h - widget - MARGIN;
+        int wx = leftAligned(MOD_CONFIG.client_minimapCorner) ? MARGIN : w - widget - MARGIN;
+        int wy = topAligned(MOD_CONFIG.client_minimapCorner) ? MARGIN : h - widget - MARGIN;
 
         // Parchment backing: frames the map and fills unexplored (transparent) map
         // pixels.
@@ -74,7 +74,7 @@ public final class MinimapHud {
     // it isn't drawing there. Vanilla's top-right HUD (status effects, toasts) is
     // shifted left by this so the minimap doesn't cover it.
     public static int rightInset() {
-        if (MOD_CONFIG.minimapCorner != MinimapCorner.TOP_RIGHT)
+        if (MOD_CONFIG.client_minimapCorner != MinimapCorner.TOP_RIGHT)
             return 0;
         if (activeMapId(Minecraft.getInstance()) == null)
             return 0;
@@ -86,7 +86,7 @@ public final class MinimapHud {
     private static MapId activeMapId(Minecraft mc) {
         LocalPlayer player = mc.player;
         ClientLevel level = mc.level;
-        if (!MOD_CONFIG.minimapEnabled || player == null || level == null)
+        if (!MOD_CONFIG.client_minimapEnabled || player == null || level == null)
             return null;
 
         ItemStack atlas = resolveAtlas(player);
@@ -99,7 +99,7 @@ public final class MinimapHud {
     }
 
     private static int size() {
-        return (int) Math.clamp(MOD_CONFIG.minimapSize, 16, 512);
+        return (int) Math.clamp(MOD_CONFIG.client_minimapSize, 16, 512);
     }
 
     private static int border(int size) {

@@ -95,7 +95,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 .size();
         Integer empty_maps = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         tooltip.clear();
-        tooltip.add(Component.literal(filled_maps + "/" + MOD_CONFIG.atlasMapCapacity + " Filled Maps")
+        tooltip.add(Component.literal(filled_maps + "/" + MOD_CONFIG.server_atlasMapCapacity + " Filled Maps")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(empty_maps + " Empty Maps").withStyle(ChatFormatting.GRAY));
         if (dimension != null)
@@ -136,7 +136,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
         ItemStack itemStack = slot.getItem();
         BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         if (clickType == ClickAction.PRIMARY && !itemStack.isEmpty()) {
             if (itemStack.is(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, itemStack, clickType);
@@ -194,7 +194,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             return false;
 
         BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         if (clickType == ClickAction.PRIMARY && !otherStack.isEmpty()) {
             if (otherStack.is(Items.MAP)) {
                 return handleEmptyMapCLick(atlas, otherStack, clickType);
@@ -290,21 +290,21 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         BundleContents contents = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         if (contents.isEmpty())
             return super.getTooltipImage(stack);
-        int used = Math.min(contents.size(), MOD_CONFIG.atlasMapCapacity);
+        int used = Math.min(contents.size(), MOD_CONFIG.server_atlasMapCapacity);
         return Optional.of(new AtlasTooltipData(contents,
-                org.apache.commons.lang3.math.Fraction.getFraction(used, MOD_CONFIG.atlasMapCapacity)));
+                org.apache.commons.lang3.math.Fraction.getFraction(used, MOD_CONFIG.server_atlasMapCapacity)));
     }
 
     @Override
     public int getBarWidth(ItemStack stack) {
         int usedSpace = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY).size();
-        return (int) Math.clamp(Math.floor(13f * usedSpace / MOD_CONFIG.atlasMapCapacity), 1, 13);
+        return (int) Math.clamp(Math.floor(13f * usedSpace / MOD_CONFIG.server_atlasMapCapacity), 1, 13);
     }
 
     @Override
     public int getBarColor(ItemStack stack) {
         int usedSpace = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY).size();
-        if (usedSpace >= MOD_CONFIG.atlasMapCapacity) {
+        if (usedSpace >= MOD_CONFIG.server_atlasMapCapacity) {
             return FULL_ITEM_BAR_COLOR;
         } else {
             return ITEM_BAR_COLOR;

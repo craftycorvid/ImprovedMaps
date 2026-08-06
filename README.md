@@ -10,11 +10,19 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
   - Make a copy of the entire Atlas. Great for map walls!
   - Fits up to 512 filled maps(configurable), and any number of empty maps
 - **Map Information Tooltips** - See the map scale and center coordinates right from the tooltip
+- **Biome Map Colours** - Records which biome each map pixel came from, so maps tint grass, leaves
+  and water per biome instead of drawing every biome the same flat green
+  - Toggle with `server_cacheBiomeMapColors` in the config. Costs about what vanilla already spends on map data
+  - Only players with the mod installed see the difference - a vanilla client is limited to
+    Minecraft's fixed 64-colour map palette and is sent nothing extra
+  - Because the server records it, everyone sees the *same* colours on the same map. Pixels drawn
+    before you switched it on stay vanilla until that ground is walked again
 
 ### (Optional) Client-side Features
 
 - **Minimap** - Your last selected Atlas can be displayed as a minimap if you install the mod client-side.
 - **Atlas View** - Press `M` (rebindable in Controls) to see every map in your Atlas stitched into one big map. Opens centred on you; scroll to zoom and drag to pan.
+- **Biome Map Colours** - Draws the tint the server records, if it records one. `client_showBiomeMapColors` is yours alone: turn it off for vanilla map colours even on a server that has the feature switched on.
 - Proper display of Atlas' fullness bar
 
 ### How to use Atlases

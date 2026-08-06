@@ -13,6 +13,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 import net.fabricmc.loader.api.FabricLoader;
 
 public class ModConfig {
@@ -24,12 +25,34 @@ public class ModConfig {
         TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
     }
 
-    // Config values
-    public int atlasMapCapacity = 512;
-    public boolean updateAtlasWhenNotInHand = true;
-    public boolean minimapEnabled = true;
-    public MinimapCorner minimapCorner = MinimapCorner.TOP_RIGHT;
-    public int minimapSize = 96;
+    // Config values. The server_/client_ prefix says who decides: server_ settings are read by
+    // whoever runs the world and ignored on a client connected to someone else's server, client_
+    // settings apply wherever their owner plays.
+    //
+    // The `alternate` names are the keys these fields used before the prefixes existed. Gson reads
+    // them if present and loadConfig writes the file back, so an existing config carries over on
+    // first launch instead of silently resetting to defaults.
+    @SerializedName(value = "server_atlasMapCapacity", alternate = {"atlasMapCapacity"})
+    public int server_atlasMapCapacity = 512;
+
+    @SerializedName(value = "server_updateAtlasWhenNotInHand",
+            alternate = {"updateAtlasWhenNotInHand"})
+    public boolean server_updateAtlasWhenNotInHand = true;
+
+    @SerializedName(value = "server_cacheBiomeMapColors", alternate = {"biomeMapColors"})
+    public boolean server_cacheBiomeMapColors = true;
+
+    @SerializedName(value = "client_showBiomeMapColors", alternate = {"showBiomeMapColors"})
+    public boolean client_showBiomeMapColors = true;
+
+    @SerializedName(value = "client_minimapEnabled", alternate = {"minimapEnabled"})
+    public boolean client_minimapEnabled = true;
+
+    @SerializedName(value = "client_minimapCorner", alternate = {"minimapCorner"})
+    public MinimapCorner client_minimapCorner = MinimapCorner.TOP_RIGHT;
+
+    @SerializedName(value = "client_minimapSize", alternate = {"minimapSize"})
+    public int client_minimapSize = 96;
 
     // Reading and saving
     public static ModConfig loadConfig() {

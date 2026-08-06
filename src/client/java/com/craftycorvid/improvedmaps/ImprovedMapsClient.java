@@ -2,6 +2,7 @@ package com.craftycorvid.improvedmaps;
 
 import org.lwjgl.glfw.GLFW;
 import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.AtlasMapCenters;
+import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.MapBiomesPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import eu.pb4.polymer.networking.api.client.PolymerClientNetworking;
 import net.fabricmc.api.ClientModInitializer;
@@ -12,9 +13,14 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.ClientTooltipComponentCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientBundleTooltip;
 import net.minecraft.nbt.IntTag;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 public class ImprovedMapsClient implements ClientModInitializer {
 	public static final KeyMapping OPEN_ATLAS = new KeyMapping("key.improved-maps.open_atlas",
@@ -35,8 +41,27 @@ public class ImprovedMapsClient implements ClientModInitializer {
 		});
 		ClientPlayNetworking.registerGlobalReceiver(AtlasMapCenters.TYPE,
 				(payload, context) -> AtlasScreen.cacheCenters(payload.centers()));
-		ClientPlayConnectionEvents.DISCONNECT
-				.register((handler, client) -> AtlasScreen.forgetCenters());
+		ClientPlayNetworking.registerGlobalReceiver(MapBiomesPayload.TYPE,
+				(payload, context) -> MapBiomeTints.accept(payload));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			AtlasScreen.forgetCenters();
+			MapBiomeTints.forget();
+		});
+
+		// Biome tints are read out of the pack's colormaps, so a pack swap invalidates both the
+		// cached tints and every map texture already built from them.
+		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
+				.registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+					@Override
+					public Identifier getFabricId() {
+						return ImprovedMaps.id("map_biome_tints");
+					}
+
+					@Override
+					public void onResourceManagerReload(ResourceManager manager) {
+						MapBiomeTints.resourcesReloaded();
+					}
+				});
 		HudElementRegistry.addLast(ImprovedMaps.id("minimap"), MinimapHud::render);
 
 		// Status effect icons share the minimap's top-right corner: slide them clear.

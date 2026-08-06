@@ -58,7 +58,7 @@ public class AtlasRecipe extends CustomRecipe {
                 .findFirst().orElse(null);
 
         BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         builder.tryInsert(map);
         map.grow(1);
         atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());

@@ -34,7 +34,7 @@ public final class ImprovedMapsLifecycleEvents {
             if (offHand.is(ImprovedMapsItems.ATLAS))
                 AtlasPlayerHandTick(player, offHand, EquipmentSlot.OFFHAND);
 
-            if (MOD_CONFIG.updateAtlasWhenNotInHand) {
+            if (MOD_CONFIG.server_updateAtlasWhenNotInHand) {
                 for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                     ItemStack stack = player.getInventory().getItem(i);
                     if (stack.is(ImprovedMapsItems.ATLAS) &&
@@ -56,7 +56,7 @@ public final class ImprovedMapsLifecycleEvents {
                     .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
             if (contents.isEmpty()) {
                 BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
-                ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
+                ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
 
                 int emptyCount = atlas
                         .getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
@@ -162,7 +162,7 @@ public final class ImprovedMapsLifecycleEvents {
         BundleContents bundleContents = atlas
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         BundleContents.Mutable builder = new BundleContents.Mutable(bundleContents);
-        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.atlasMapCapacity);
+        ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         if (emptyCount > 0 || player.isCreative()) {
             // Make the map the player is standing on. MapItem.create snaps to the vanilla map
