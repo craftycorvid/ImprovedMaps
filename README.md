@@ -17,7 +17,9 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
 ### (Optional) Client-side Features
 
 - **Minimap** - Your last selected Atlas can be displayed as a minimap if you install the mod client-side.
+  - Your coordinates and current biome are shown beside it.
 - **Atlas View** - Press `M` (rebindable in Controls) to see every map in your Atlas stitched into one big map. Opens centred on you; scroll to zoom and drag to pan.
+  - Hover anywhere on the page to read the world coordinates under your cursor.
 - **Biome Map Colours** - Draws the tint biome tint for grass, leaves and water on maps and atlases
 - Proper display of Atlas' fullness bar
 

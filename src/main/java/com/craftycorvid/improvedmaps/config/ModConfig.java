@@ -51,6 +51,9 @@ public class ModConfig {
     @SerializedName(value = "client_minimapCorner", alternate = {"minimapCorner"})
     public MinimapCorner client_minimapCorner = MinimapCorner.TOP_RIGHT;
 
+    // New key rather than a rename, so it needs no alternate.
+    public boolean client_minimapCoordinates = true;
+
     @SerializedName(value = "client_minimapSize", alternate = {"minimapSize"})
     public int client_minimapSize = 96;
 

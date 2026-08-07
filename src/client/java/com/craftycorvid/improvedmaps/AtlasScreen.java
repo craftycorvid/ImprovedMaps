@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.level.saveddata.maps.MapId;
@@ -187,6 +188,8 @@ public final class AtlasScreen extends Screen {
         int minRow = Integer.MAX_VALUE;
         int maxCol = Integer.MIN_VALUE;
         int maxRow = Integer.MIN_VALUE;
+        // All of an atlas's maps share a scale, so any placed one gives the grid's.
+        int scale = 0;
         for (MapId id : ids) {
             MapCenter center = CENTERS.get(id);
             MapItemSavedData data = center == null ? null : level.getMapData(id);
@@ -196,6 +199,7 @@ public final class AtlasScreen extends Screen {
             maxCol = Math.max(maxCol, col(center, data));
             minRow = Math.min(minRow, row(center, data));
             maxRow = Math.max(maxRow, row(center, data));
+            scale = data.scale;
         }
         if (minCol > maxCol) { // nothing placeable yet - the reply is still in flight
             g.text(font, LOADING.getVisualOrderText(),
@@ -246,6 +250,33 @@ public final class AtlasScreen extends Screen {
         }
         pose.popMatrix();
         g.disableScissor();
+
+        drawCursorPosition(g, mouseX, mouseY, pixelScale, minCol, minRow, scale);
+    }
+
+    // Where in the world the cursor is pointing, on the cover below the page. Only while it is over
+    // the page - off it there is nothing under the cursor to report. Still drawn past the edge of
+    // the explored grid, where it says where the unexplored ground is.
+    private void drawCursorPosition(GuiGraphicsExtractor g, int mouseX, int mouseY,
+            float pixelScale, int minCol, int minRow, int scale) {
+        if (mouseX < viewX || mouseX >= viewX + viewW || mouseY < viewY || mouseY >= viewY + viewH)
+            return;
+
+        Component text = Component.literal(world(mouseX, originX(pixelScale), pixelScale, minCol,
+                scale) + " " + world(mouseY, originY(pixelScale), pixelScale, minRow, scale));
+        // The bare strip of cover between the parchment's bottom edge and the cover's own, right
+        // aligned with the page. White with a shadow: the palette's browns are what the page is
+        // drawn in, and they disappear against leather.
+        g.text(font, text, viewX + viewW - font.width(text),
+                viewY + viewH + BORDER_PX + (pageInset - font.lineHeight) / 2, 0xFFFFFFFF, true);
+    }
+
+    // Screen axis to world axis. Undoes originX/originY to get the grid pixel under the cursor,
+    // then walks the map lattice: map k at this scale covers [k * span - 64, k * span - 64 + span),
+    // which is the same lattice col() and row() divide by.
+    private static int world(int mouse, double origin, float pixelScale, int minCell, int scale) {
+        int gridPixel = Mth.floor((mouse - origin) / pixelScale);
+        return minCell * (MAP_PX << scale) - 64 + gridPixel * (1 << scale);
     }
 
     private void drawBook(GuiGraphicsExtractor g) {

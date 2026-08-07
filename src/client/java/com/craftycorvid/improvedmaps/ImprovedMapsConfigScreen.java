@@ -40,6 +40,14 @@ public final class ImprovedMapsConfigScreen {
                 .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(16, 512).step(8))
                 .build();
 
+        Option<Boolean> minimapCoordinates = Option.<Boolean>createBuilder()
+                .name(Component.literal("Show coordinates"))
+                .description(describe("Shows your position and current biome beside the minimap."))
+                .binding(true, () -> MOD_CONFIG.client_minimapCoordinates,
+                        v -> MOD_CONFIG.client_minimapCoordinates = v)
+                .controller(BooleanControllerBuilder::create)
+                .build();
+
         Option<Boolean> showBiomeMapColors = Option.<Boolean>createBuilder()
                 .name(Component.literal("Show biome map colours"))
                 .description(describe(
@@ -85,6 +93,7 @@ public final class ImprovedMapsConfigScreen {
                         .option(minimapEnabled)
                         .option(minimapCorner)
                         .option(minimapSize)
+                        .option(minimapCoordinates)
                         .option(showBiomeMapColors)
                         .build())
                 .category(ConfigCategory.createBuilder()

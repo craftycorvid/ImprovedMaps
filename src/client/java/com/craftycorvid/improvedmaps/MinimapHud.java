@@ -1,9 +1,13 @@
 package com.craftycorvid.improvedmaps;
 
+import java.util.List;
 import org.joml.Matrix3x2fStack;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Util;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -22,6 +26,10 @@ import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 
 public final class MinimapHud {
     private static final int MARGIN = 8;
+    // Between the minimap and the readout beside it.
+    private static final int READOUT_GAP = 2;
+    // Drawn with a shadow: the readout sits on the world, not on the parchment.
+    private static final int READOUT_COLOUR = 0xFFFFFFFF;
     // Also the page of the atlas grid view (AtlasScreen), nine-sliced there.
     static final Identifier MAP_BACKGROUND = Identifier.fromNamespaceAndPath("minecraft",
             "textures/map/map_background.png");
@@ -65,21 +73,77 @@ public final class MinimapHud {
         Matrix3x2fStack pose = g.pose();
         pose.pushMatrix();
         pose.translate(wx + border, wy + border);
-        pose.scale(size / 128f, size / 128f);
+        pose.scale(mapScale(size), mapScale(size));
         g.map(state);
         pose.popMatrix();
+
+        drawReadout(g, mc, wx, wy, widget, mapScale(size));
+    }
+
+    // Position and biome, centred on the widget. Below it in the top corners, above it in the
+    // bottom two - "below" there would put the text behind the hotbar and experience bar.
+    private static void drawReadout(GuiGraphicsExtractor g, Minecraft mc, int wx, int wy,
+            int widget, float scale) {
+        List<Component> lines = readoutLines(mc);
+        if (lines.isEmpty())
+            return;
+
+        Font font = mc.font;
+        int block = (int) Math.ceil(lines.size() * font.lineHeight * scale);
+        int y = topAligned(MOD_CONFIG.client_minimapCorner) ? wy + widget + READOUT_GAP
+                : wy - READOUT_GAP - block;
+
+        // Drawn at the map's own pixel scale, so the readout keeps its proportions whatever the
+        // minimap is sized to. Centred by translating to the middle of the widget first and then
+        // halving each line about it: font.width is in unscaled units, like the offsets below it.
+        Matrix3x2fStack pose = g.pose();
+        pose.pushMatrix();
+        pose.translate(wx + widget / 2f, y);
+        pose.scale(scale, scale);
+        int lineY = 0;
+        for (Component line : lines) {
+            g.text(font, line, -font.width(line) / 2, lineY, READOUT_COLOUR, true);
+            lineY += font.lineHeight;
+        }
+        pose.popMatrix();
+    }
+
+    // The readout's lines, or empty when it isn't drawing. rightInset needs their width too, so
+    // this is the one place they are built.
+    private static List<Component> readoutLines(Minecraft mc) {
+        LocalPlayer player = mc.player;
+        ClientLevel level = mc.level;
+        if (!MOD_CONFIG.client_minimapCoordinates || player == null || level == null)
+            return List.of();
+
+        Component position = Component.literal(
+                player.getBlockX() + " " + player.getBlockY() + " " + player.getBlockZ());
+        // Biomes are a registry of data-driven entries, so a datapack one may have no lang key and
+        // an unregistered one no key at all; drop the line rather than print a raw identifier.
+        return level.getBiome(player.blockPosition()).unwrapKey()
+                .map(key -> List.of(position, Component
+                        .translatable(Util.makeDescriptionId("biome", key.identifier()))))
+                .orElse(List.of(position));
     }
 
     // Width the minimap reserves along the right screen edge this frame, or 0 when
     // it isn't drawing there. Vanilla's top-right HUD (status effects, toasts) is
     // shifted left by this so the minimap doesn't cover it.
     public static int rightInset() {
+        Minecraft mc = Minecraft.getInstance();
         if (MOD_CONFIG.client_minimapCorner != MinimapCorner.TOP_RIGHT)
             return 0;
-        if (activeMapId(Minecraft.getInstance()) == null)
+        if (activeMapId(mc) == null)
             return 0;
+
         int size = size();
-        return size + border(size) * 2 + MARGIN * 2;
+        int widest = size + border(size) * 2;
+        // The readout hangs below the widget, which is where effect icons stack, so a line wider
+        // than the minimap has to push them too. Measured at the scale it is drawn at.
+        for (Component line : readoutLines(mc)) {
+            widest = Math.max(widest, (int) Math.ceil(mc.font.width(line) * mapScale(size)));
+        }
+        return widest + MARGIN * 2;
     }
 
     // The map the minimap draws this frame, or null when it draws nothing.
@@ -104,6 +168,13 @@ public final class MinimapHud {
 
     private static int border(int size) {
         return Math.max(2, Math.round(size / 16f)); // ~8px paper border at size 128
+    }
+
+    // Screen pixels per map pixel. The readout is drawn at this too, so text and map keep the same
+    // proportions at any minimap size - at the default 96 that is 0.75, a quarter smaller than the
+    // font's own size.
+    private static float mapScale(int size) {
+        return size / 128f;
     }
 
     // "Last atlas held": prefer a hand, else the remembered slot, else any atlas,
