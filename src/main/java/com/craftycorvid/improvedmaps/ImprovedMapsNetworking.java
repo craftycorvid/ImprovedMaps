@@ -8,17 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.google.common.collect.Lists;
-import eu.pb4.polymer.networking.api.server.PolymerServerNetworking;
+import eu.pb4.polymer.core.api.utils.PolymerSyncUtils;
+import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.IntTag;
 import net.minecraft.network.VarInt;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -38,7 +38,8 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
 
 public final class ImprovedMapsNetworking {
-    public static final Set<UUID> PLAYERS_WITH_CLIENT = new HashSet<>();
+    // Read from Netty encode threads, written from the server thread.
+    public static final Set<UUID> PLAYERS_WITH_CLIENT = ConcurrentHashMap.newKeySet();
     // Per player, the MapBiomes version last sent for each map. Biome data keeps growing as a player
     // explores, so "sent once" is not enough - but it changes at vanilla's own map-update cadence,
     // so re-sending whenever the version moves costs about what a map patch does.
@@ -90,6 +91,21 @@ public final class ImprovedMapsNetworking {
                     }
                 }
             };
+
+    // Until the client acks Polymer's registry sync it cannot resolve our item id, so the atlas has
+    // to go out as a vanilla stand-in - the sync packet itself carries one.
+    public record ClientReady() implements CustomPacketPayload {
+        public static final ClientReady INSTANCE = new ClientReady();
+        public static final CustomPacketPayload.Type<ClientReady> TYPE =
+                new CustomPacketPayload.Type<>(ImprovedMaps.id("client_ready"));
+        public static final StreamCodec<ByteBuf, ClientReady> STREAM_CODEC =
+                StreamCodec.unit(INSTANCE);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
 
     // The client asks for the maps of the atlas it is viewing: those it holds no pixels for, or
     // no centre for. Both halves of the reply are per-map, so it only ever asks once.
@@ -159,6 +175,7 @@ public final class ImprovedMapsNetworking {
     public static void initialize() {
         PayloadTypeRegistry.serverboundPlay().register(AtlasViewRequest.TYPE,
                 AtlasViewRequest.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ClientReady.TYPE, ClientReady.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(AtlasMapCenters.TYPE,
                 AtlasMapCenters.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(MapBiomesPayload.TYPE,
@@ -166,13 +183,20 @@ public final class ImprovedMapsNetworking {
         ServerPlayNetworking.registerGlobalReceiver(AtlasViewRequest.TYPE,
                 (payload, context) -> sendAtlasView(context.player(), payload.ids()));
 
-        ServerPlayConnectionEvents.JOIN.register(
-                (ServerGamePacketListenerImpl handler, PacketSender sender, MinecraftServer server) -> {
-                    if (PolymerServerNetworking.getMetadata(handler, ImprovedMaps.HELLO_PACKET,
-                            IntTag.TYPE) != null) {
-                        PLAYERS_WITH_CLIENT.add(handler.getPlayer().getUUID());
-                    }
-                });
+        ServerPlayNetworking.registerGlobalReceiver(ClientReady.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            // Nothing rate limits a serverbound payload, and the refresh below is not free.
+            if (!PLAYERS_WITH_CLIENT.add(player.getUUID()))
+                return;
+            // Everything sent before now shows the stand-in, the creative tab included.
+            PolymerUtils.reloadInventory(player);
+            PolymerSyncUtils.synchronizeCreativeTabs(player.connection);
+        });
+
+        // Polymer resyncs mid-session too, on a client language change.
+        PolymerSyncUtils.ON_SYNC_STARTED
+                .register(handler -> PLAYERS_WITH_CLIENT.remove(handler.getPlayer().getUUID()));
+
         ServerPlayConnectionEvents.DISCONNECT
                 .register((ServerGamePacketListenerImpl handler, MinecraftServer server) -> {
                     PLAYERS_WITH_CLIENT.remove(handler.getPlayer().getUUID());

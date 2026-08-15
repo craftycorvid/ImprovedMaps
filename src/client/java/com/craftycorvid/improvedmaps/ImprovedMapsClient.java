@@ -2,9 +2,10 @@ package com.craftycorvid.improvedmaps;
 
 import org.lwjgl.glfw.GLFW;
 import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.AtlasMapCenters;
+import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.ClientReady;
 import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.MapBiomesPayload;
 import com.mojang.blaze3d.platform.InputConstants;
-import eu.pb4.polymer.networking.api.client.PolymerClientNetworking;
+import eu.pb4.polymer.core.api.client.PolymerClientUtils;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -16,8 +17,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientBundleTooltip;
-import net.minecraft.nbt.IntTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -29,7 +30,15 @@ public class ImprovedMapsClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		PolymerClientNetworking.setClientMetadata(ImprovedMaps.HELLO_PACKET, IntTag.valueOf(1));
+		// Any earlier and the server puts our item id inside the sync packet, which the client
+		// cannot resolve until it has read it. Fires on the netty thread, before the player exists.
+		PolymerClientUtils.ON_SYNC_FINISHED.register(() -> {
+			Minecraft client = Minecraft.getInstance();
+			client.execute(() -> {
+				if (client.getConnection() != null)
+					ClientPlayNetworking.send(ClientReady.INSTANCE);
+			});
+		});
 
 		KeyMappingHelper.registerKeyMapping(OPEN_ATLAS);
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

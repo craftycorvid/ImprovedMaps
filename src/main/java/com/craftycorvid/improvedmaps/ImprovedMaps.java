@@ -18,7 +18,6 @@ import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 public final class ImprovedMaps implements ModInitializer {
 	public static final String MOD_ID = "improved-maps";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public static final Identifier HELLO_PACKET = id("hello");
 	public static ModConfig MOD_CONFIG;
 
 	public static RecipeSerializer<AtlasRecipe> ATLAS_RECIPE_SERIALIZER;

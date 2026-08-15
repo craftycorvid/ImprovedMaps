@@ -55,8 +55,9 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
     @Override
     public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
+        // A client that cannot resolve our item id drops the connection over it.
         ServerPlayer player = eu.pb4.polymer.common.api.PolymerCommonUtils.getPlayer(context);
-        if (player == null || PLAYERS_WITH_CLIENT.contains(player.getUUID()))
+        if (player != null && PLAYERS_WITH_CLIENT.contains(player.getUUID()))
             return this;
         else
             return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;
