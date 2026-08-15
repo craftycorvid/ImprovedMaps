@@ -1,4 +1,6 @@
-# Improved Maps [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Improved Maps](assets/header.png)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](https://modrinth.com/mod/fabric-api). Works with Vanilla clients thanks to [Polymer](https://modrinth.com/mod/polymer)!
 
