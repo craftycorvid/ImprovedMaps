@@ -178,35 +178,44 @@ public final class MinimapHud {
     }
 
     // "Last atlas held": prefer a hand, else the remembered slot, else any atlas,
-    // else none. Also what the atlas grid view (AtlasScreen) opens on.
+    // else none. Only atlases of the player's current dimension count - an atlas
+    // left over from the other side of a portal would keep its old map on screen,
+    // since the server stops updating its MAP_ID the moment the player leaves its
+    // dimension. Also what the atlas grid view (AtlasScreen) opens on.
     static ItemStack resolveAtlas(LocalPlayer player) {
         Inventory inv = player.getInventory();
+        String dimension = player.level().dimension().identifier().toString();
 
         ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (main.is(ImprovedMapsItems.ATLAS)) {
+        if (atlasFor(main, dimension)) {
             trackedSlot = inv.getSelectedSlot();
             return main;
         }
         // Off-hand is always equipped, so an off-hand atlas counts as continuously
         // held.
         ItemStack off = player.getItemInHand(InteractionHand.OFF_HAND);
-        if (off.is(ImprovedMapsItems.ATLAS))
+        if (atlasFor(off, dimension))
             return off;
 
         if (trackedSlot >= 0 && trackedSlot < inv.getContainerSize()) {
             ItemStack s = inv.getItem(trackedSlot);
-            if (s.is(ImprovedMapsItems.ATLAS))
+            if (atlasFor(s, dimension))
                 return s;
         }
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
-            if (s.is(ImprovedMapsItems.ATLAS)) {
+            if (atlasFor(s, dimension)) {
                 trackedSlot = i;
                 return s;
             }
         }
         trackedSlot = -1;
         return null;
+    }
+
+    private static boolean atlasFor(ItemStack stack, String dimension) {
+        return stack.is(ImprovedMapsItems.ATLAS) && dimension
+                .equals(stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, ""));
     }
 
     private static boolean leftAligned(MinimapCorner c) {
