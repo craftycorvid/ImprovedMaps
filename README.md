@@ -1,6 +1,4 @@
-![Improved Maps](assets/header.png)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Improved Maps](docs/header.png)
 
 This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](https://modrinth.com/mod/fabric-api). Works with Vanilla clients thanks to [Polymer](https://modrinth.com/mod/polymer)!
 
@@ -53,3 +51,5 @@ This mod is only for Fabric Servers(or Single-Player) and requires [Fabric API](
 - [Pillowsledder](https://bsky.app/profile/pillowsledder.bsky.social) for creating the excellent icons!
 - [Map Atlases](https://modrinth.com/mod/map-atlases) by Pepperoni-Jabroni for the original idea and map switching logic.
 - [Diversity: Better Bundle](https://modrinth.com/mod/diversity-better-bundle) by FaeWulf for implementation of larger bundle sizes
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
