@@ -84,6 +84,10 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
         clientStack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
                 new ArrayList<>(), new ArrayList<>(), stringList, new ArrayList<>()));
+        // Polymer builds the client stack from a whitelist of components, so our own never make
+        // the trip. The minimap picks its atlas by dimension, so put that one back - the component
+        // gates itself to clients running the mod, a vanilla one drops it at encode.
+        clientStack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION, dimension);
         return clientStack;
     }
 

@@ -1,22 +1,30 @@
 package com.craftycorvid.improvedmaps;
 
 import com.mojang.serialization.Codec;
+import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.core.api.other.PolymerComponent;
+import eu.pb4.polymer.core.api.utils.PolymerSyncedObject;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 
 import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
+import static com.craftycorvid.improvedmaps.ImprovedMapsNetworking.PLAYERS_WITH_CLIENT;
 
 public class ImprovedMapsComponentTypes {
         public static final DataComponentType<Integer> ATLAS_EMPTY_MAP_COUNT = new DataComponentType.Builder<Integer>()
                         .persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT).build();
         public static final DataComponentType<Byte> ATLAS_SCALE = new DataComponentType.Builder<Byte>()
                         .persistent(Codec.BYTE).networkSynchronized(ByteBufCodecs.BYTE).build();
-        public static final DataComponentType<String> ATLAS_DIMENSION = new DataComponentType.Builder<String>()
-                        .persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8).build();
+        public static final DataComponentType<String> ATLAS_DIMENSION = syncedToModdedClients(
+                        new DataComponentType.Builder<String>().persistent(Codec.STRING)
+                                        .networkSynchronized(ByteBufCodecs.STRING_UTF8).build());
         public static final DataComponentType<Boolean> ATLAS_INITIALIZED = new DataComponentType.Builder<Boolean>()
                         .persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL).build();
 
@@ -24,6 +32,43 @@ public class ImprovedMapsComponentTypes {
         public static final Identifier ATLAS_SCALE_DATA = id("atlas_scale");
         public static final Identifier ATLAS_DIMENSION_DATA = id("atlas_dimension");
         public static final Identifier ATLAS_INITIALIZED_DATA = id("atlas_initialized");
+
+        // Polymer strips every component passed to registerDataComponent out of the outgoing
+        // DataComponentPatch (PolymerComponent.canSync), so a client only ever sees the item
+        // prototype's default - "minecraft:overworld" for every atlas. The minimap picks its
+        // atlas by dimension, so this one has to survive the trip. Only for clients running the
+        // mod: a vanilla one cannot resolve the component's id.
+        private static <T> DataComponentType<T> syncedToModdedClients(DataComponentType<T> type) {
+                class Synced implements DataComponentType<T>, PolymerSyncedObject<DataComponentType<?>> {
+                        @Override
+                        public Codec<T> codec() {
+                                return type.codec();
+                        }
+
+                        @Override
+                        public StreamCodec<? super RegistryFriendlyByteBuf, T> streamCodec() {
+                                return type.streamCodec();
+                        }
+
+                        @Override
+                        public boolean ignoreSwapAnimation() {
+                                return type.ignoreSwapAnimation();
+                        }
+
+                        @Override
+                        public DataComponentType<?> getPolymerReplacement(DataComponentType<?> object,
+                                        PacketContext context) {
+                                return object;
+                        }
+
+                        @Override
+                        public boolean canSyncRawToClient(PacketContext context) {
+                                ServerPlayer player = PolymerCommonUtils.getPlayer(context);
+                                return player != null && PLAYERS_WITH_CLIENT.contains(player.getUUID());
+                        }
+                }
+                return new Synced();
+        }
 
         public static void initialize() {
                 Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, ATLAS_EMPTY_MAP_DATA, ATLAS_EMPTY_MAP_COUNT);
