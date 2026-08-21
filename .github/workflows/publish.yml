@@ -2,10 +2,10 @@ name: Publish on GitHub & Modrinth
 on: [workflow_dispatch]
 
 env:
-  VERSION: 0.7.1
-  RELEASE_NAME: Improved Maps 0.7.1 for Minecraft 26.2
+  VERSION: 1.0
+  RELEASE_NAME: Improved Maps 1.0 for Minecraft 26.2
   CHANGE_LOG: |
-    - Fixed a malformed packet error that could trigger as race condition when players with the mod installed connected to a server. (Thanks to @kgadberry)
+    - Only resolve atlases of the dimension the player is in
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
 
@@ -23,6 +23,9 @@ jobs:
       - name: Publish (CurseForge/Modrinth/GitHub)
         uses: Kir-Antipov/mc-publish@v3.3
         with:
+          curseforge-id: 1662987
+          curseforge-token: "${{env.CURSEFORGE_TOKEN}}"
+
           modrinth-id: wRyAdXG3
           modrinth-token: "${{env.MODRINTH_TOKEN}}"
           modrinth-featured: true
@@ -32,9 +35,9 @@ jobs:
 
           name: "${{env.RELEASE_NAME}}"
           version: "${{env.VERSION}}"
-          version-type: beta
+          version-type: release
           changelog: "${{env.CHANGE_LOG}}"
-          environment: client? | server
+          environment: client? | server | singleplayer
           dependencies: |
             fabric-api
             polymer
