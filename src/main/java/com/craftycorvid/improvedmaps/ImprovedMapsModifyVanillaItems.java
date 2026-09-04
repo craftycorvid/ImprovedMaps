@@ -7,38 +7,33 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import com.google.common.collect.Lists;
-import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.core.api.item.PolymerItemUtils;
 
 public final class ImprovedMapsModifyVanillaItems {
     public static void initialize() {
-        PolymerItemUtils.CONTEXT_ITEM_CHECK.register((itemInstance, context) -> {
-            return itemInstance.is(Items.FILLED_MAP);
-        });
+        PolymerItemUtils.ITEM_CHECK.register(itemInstance -> itemInstance.is(Items.FILLED_MAP));
 
-        PolymerItemUtils.ITEM_MODIFICATION_EVENT.register((original, client, context) -> {
+        PolymerItemUtils.ITEM_MODIFICATION_EVENT.register((original, client, player) -> {
             // Add extra tooltip lines to filled maps
             if (original.is(Items.FILLED_MAP)) {
                 ItemStack out = original.copy();
                 List<Component> loreTexts = Lists.newArrayList();
-                ServerPlayer player = PolymerCommonUtils.getPlayer(context);
                 if (player == null) {
                     return client;
                 }
-                ServerLevel world = player.level();
+                ServerLevel world = player.serverLevel();
                 MapItemSavedData mapState = MapItem.getSavedData(out, world);
 
                 if (mapState != null) {
                     loreTexts.add(Component
                             .literal("Dimension " + ImprovedMapsUtils.formatDimensionString(
-                                    mapState.dimension.identifier().toString()))
+                                    mapState.dimension.location().toString()))
                             .setStyle(Style.EMPTY.withItalic(false).withColor(ChatFormatting.GRAY)));
                     loreTexts.add(Component
                             .literal("Center " + mapState.centerX + ", " + mapState.centerZ)

@@ -24,7 +24,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundMapItemDataPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -154,14 +154,14 @@ public final class ImprovedMapsNetworking {
     // client cannot widen that palette on its own - MapColor is a hardcoded table - and it cannot
     // work the biome out either, since a map usually covers terrain no client has loaded. So the
     // server, which sampled the block in the first place, says what was there.
-    public record MapBiomesPayload(MapId id, List<Identifier> palette, byte[] indices)
+    public record MapBiomesPayload(MapId id, List<ResourceLocation> palette, byte[] indices)
             implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<MapBiomesPayload> TYPE =
                 new CustomPacketPayload.Type<>(ImprovedMaps.id("map_biomes"));
         public static final StreamCodec<ByteBuf, MapBiomesPayload> STREAM_CODEC =
                 StreamCodec.composite(
-                        ByteBufCodecs.<ByteBuf, Identifier, List<Identifier>>collection(
-                                ArrayList::new, Identifier.STREAM_CODEC, MAX_BIOME_PALETTE),
+                        ByteBufCodecs.<ByteBuf, ResourceLocation, List<ResourceLocation>>collection(
+                                ArrayList::new, ResourceLocation.STREAM_CODEC, MAX_BIOME_PALETTE),
                         MapBiomesPayload::palette, RUN_LENGTH_ENCODED,
                         MapBiomesPayload::indices, MapId.STREAM_CODEC, MapBiomesPayload::id,
                         (palette, indices, id) -> new MapBiomesPayload(id, palette, indices));
@@ -173,12 +173,12 @@ public final class ImprovedMapsNetworking {
     }
 
     public static void initialize() {
-        PayloadTypeRegistry.serverboundPlay().register(AtlasViewRequest.TYPE,
+        PayloadTypeRegistry.playC2S().register(AtlasViewRequest.TYPE,
                 AtlasViewRequest.STREAM_CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(ClientReady.TYPE, ClientReady.STREAM_CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(AtlasMapCenters.TYPE,
+        PayloadTypeRegistry.playC2S().register(ClientReady.TYPE, ClientReady.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(AtlasMapCenters.TYPE,
                 AtlasMapCenters.STREAM_CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(MapBiomesPayload.TYPE,
+        PayloadTypeRegistry.playS2C().register(MapBiomesPayload.TYPE,
                 MapBiomesPayload.STREAM_CODEC);
         ServerPlayNetworking.registerGlobalReceiver(AtlasViewRequest.TYPE,
                 (payload, context) -> sendAtlasView(context.player(), payload.ids()));
@@ -220,8 +220,8 @@ public final class ImprovedMapsNetworking {
             return;
         sent.put(id, biomes.version());
 
-        List<Identifier> palette =
-                biomes.palette().stream().map(ResourceKey::identifier).toList();
+        List<ResourceLocation> palette =
+                biomes.palette().stream().map(ResourceKey::location).toList();
         ServerPlayNetworking.send(player,
                 new MapBiomesPayload(id, palette, biomes.indices().clone()));
     }

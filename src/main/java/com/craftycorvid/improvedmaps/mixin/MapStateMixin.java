@@ -52,7 +52,8 @@ public abstract class MapStateMixin extends SavedData implements IMapBiomeHolder
 			target = "Lnet/minecraft/world/entity/player/Inventory;contains(Ljava/util/function/Predicate;)Z"))
 	private boolean checkAtlasInventory(Inventory inventory, Predicate<ItemStack> predicate,
 			Operation<Boolean> original) {
-		for (ItemStack itemStack : inventory) {
+		for (int i = 0; i < inventory.getContainerSize(); i++) {
+			ItemStack itemStack = inventory.getItem(i);
 			if (itemStack.is(ImprovedMapsItems.ATLAS)
 					&& itemStack.getOrDefault(DataComponents.BUNDLE_CONTENTS,
 							BundleContents.EMPTY).itemCopyStream().anyMatch(predicate)) {

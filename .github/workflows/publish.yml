@@ -3,9 +3,9 @@ on: [workflow_dispatch]
 
 env:
   VERSION: 1.0
-  RELEASE_NAME: Improved Maps 1.0 for Minecraft 26.2
+  RELEASE_NAME: Improved Maps 1.0 for Minecraft 1.21.1
   CHANGE_LOG: |
-    - Only resolve atlases of the dimension the player is in
+    - Backport to Minecraft 1.21.1
   CURSEFORGE_TOKEN: ${{ secrets.PUBLISH_CURSEFORGE_TOKEN }}
   MODRINTH_TOKEN: ${{ secrets.PUBLISH_MODRINTH_TOKEN }}
   GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
@@ -31,7 +31,7 @@ jobs:
           modrinth-token: "${{env.MODRINTH_TOKEN}}"
           modrinth-featured: true
 
-          github-tag: "v${{env.VERSION}}"
+          github-tag: "v${{env.VERSION}}+mc1.21.1"
           github-token: "${{env.GITHUB_TOKEN}}"
 
           name: "${{env.RELEASE_NAME}}"

@@ -1,5 +1,5 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
+	id 'fabric-loom' version '1.16.3'
 }
 
 version = "${project.mod_version}+mc${project.minecraft_version}"
@@ -11,6 +11,9 @@ base {
 
 repositories {
 	maven { url = "https://maven.terraformersmc.com" }
+	// YACL: its own maven, not Modrinth's - only this one carries the POM that pulls the JSON
+	// parser libraries YACL needs at runtime in a dev environment.
+	maven { url = "https://maven.isxander.dev/releases" }
 	maven { url = 'https://maven.nucleoid.xyz' }
 	maven {
 		name = "Modrinth"
@@ -21,6 +24,11 @@ repositories {
 
 loom {
 	splitEnvironmentSourceSets()
+
+	// Separate from the 26.2 branch's run/: a world written by 26.2 cannot be opened by 1.21.1.
+	runs.configureEach {
+		runDir = "run-1.21.1"
+	}
 	accessWidenerPath = file("src/main/resources/improved-maps.accesswidener")
 
 	mods {
@@ -33,18 +41,19 @@ loom {
 
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	implementation "eu.pb4:polymer-core:${project.polymer_version}"
-	implementation "eu.pb4:polymer-networking:${project.polymer_version}"
-	implementation "eu.pb4:polymer-resource-pack:${project.polymer_version}"
-	localRuntime "eu.pb4:polymer-autohost:${project.polymer_version}"
-	implementation include("xyz.nucleoid:server-translations-api:${project.server_translations_version}")
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	modImplementation "eu.pb4:polymer-core:${project.polymer_version}"
+	modImplementation "eu.pb4:polymer-networking:${project.polymer_version}"
+	modImplementation "eu.pb4:polymer-resource-pack:${project.polymer_version}"
+	modLocalRuntime "eu.pb4:polymer-autohost:${project.polymer_version}"
+	modImplementation include("xyz.nucleoid:server-translations-api:${project.server_translations_version}")
 
 	// Client-only: in-game config GUI (YACL) surfaced via Mod Menu.
-	clientImplementation "maven.modrinth:yacl:${project.yacl_version}"
-	clientImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+	modClientImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
+	modClientImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {
@@ -56,17 +65,22 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	it.options.release = 21
 }
 
 java {
+	// Minecraft 1.21.1 runs on Java 21; running the dev client/server on a newer JDK trips Mixin.
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 	// if it is present.
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {

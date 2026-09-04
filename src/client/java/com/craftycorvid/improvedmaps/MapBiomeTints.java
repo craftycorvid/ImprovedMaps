@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
@@ -51,7 +52,7 @@ public final class MapBiomeTints {
 
     public static void accept(MapBiomesPayload payload) {
         List<ResourceKey<Biome>> palette = payload.palette().stream()
-                .map(id -> ResourceKey.create(Registries.BIOME, id)).toList();
+                .map((ResourceLocation id) -> ResourceKey.create(Registries.BIOME, id)).toList();
         MAPS.put(payload.id(), new Entry(palette, payload.indices()));
     }
 
@@ -73,7 +74,7 @@ public final class MapBiomeTints {
     // to trigger a rebuild of its own. Cheap: textures rebuild lazily from the MapItemSavedData the
     // client already holds.
     public static void refresh() {
-        Minecraft.getInstance().getMapTextureManager().resetData();
+        Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
     }
 
     private static void dropTints() {
@@ -139,7 +140,7 @@ public final class MapBiomeTints {
         if (level == null)
             return null;
 
-        Biome biome = level.registryAccess().lookupOrThrow(Registries.BIOME).get(key)
+        Biome biome = level.registryAccess().registryOrThrow(Registries.BIOME).getHolder(key)
                 .map(Holder::value).orElse(null);
         if (biome == null)
             return null;

@@ -1,17 +1,19 @@
 package com.craftycorvid.improvedmaps;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.level.saveddata.maps.MapId;
 
 // The biome behind every pixel of one map. Vanilla throws this away: a map pixel is a 6-bit MapColor
@@ -29,13 +31,6 @@ public final class MapBiomes extends SavedData {
     // which the client leaves at its vanilla colour. Palette entry i is stored as index i + 1.
     private static final int MAX_PALETTE = 255;
 
-    public static final Codec<MapBiomes> CODEC = RecordCodecBuilder.create(instance -> instance
-            .group(ResourceKey.codec(Registries.BIOME).listOf().fieldOf("palette")
-                    .forGetter(biomes -> biomes.palette),
-                    Codec.BYTE_BUFFER.fieldOf("indices")
-                            .forGetter(biomes -> ByteBuffer.wrap(biomes.indices)))
-            .apply(instance, MapBiomes::new));
-
     private final List<ResourceKey<Biome>> palette;
     private final byte[] indices;
     // Bumped whenever a pixel's biome changes, so a player who already has this map can be sent the
@@ -46,40 +41,60 @@ public final class MapBiomes extends SavedData {
         this(new ArrayList<>(), new byte[PIXELS]);
     }
 
-    private MapBiomes(List<ResourceKey<Biome>> palette, ByteBuffer indices) {
-        this(new ArrayList<>(palette), read(indices));
-    }
-
     private MapBiomes(List<ResourceKey<Biome>> palette, byte[] indices) {
         this.palette = palette;
         this.indices = indices;
     }
 
-    // A hand-edited or truncated file must not take the server down with it.
-    private static byte[] read(ByteBuffer buffer) {
-        byte[] indices = new byte[PIXELS];
-        buffer.get(0, indices, 0, Math.min(buffer.remaining(), PIXELS));
-        return indices;
+    @Override
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+        ListTag list = new ListTag();
+        for (ResourceKey<Biome> biome : palette)
+            list.add(StringTag.valueOf(biome.location().toString()));
+        tag.put("palette", list);
+        tag.putByteArray("indices", indices);
+        return tag;
     }
 
-    private static SavedDataType<MapBiomes> type(MapId id) {
+    // A hand-edited or truncated file must not take the server down with it: anything malformed
+    // starts over rather than throwing, since the record refills as the map is walked again.
+    private static MapBiomes load(CompoundTag tag, HolderLookup.Provider registries) {
+        List<ResourceKey<Biome>> palette = new ArrayList<>();
+        ListTag list = tag.getList("palette", Tag.TAG_STRING);
+        for (int i = 0; i < list.size(); i++) {
+            ResourceLocation biome = ResourceLocation.tryParse(list.getString(i));
+            if (biome == null)
+                return new MapBiomes();
+            palette.add(ResourceKey.create(Registries.BIOME, biome));
+        }
+
+        byte[] stored = tag.getByteArray("indices");
+        byte[] indices = new byte[PIXELS];
+        System.arraycopy(stored, 0, indices, 0, Math.min(stored.length, PIXELS));
+        return new MapBiomes(palette, indices);
+    }
+
+    private static SavedData.Factory<MapBiomes> factory() {
         // SAVED_DATA_MAP_DATA is what this data is about; its fixers only touch vanilla map fields,
         // which we never write, so they no-op on ours.
-        return new SavedDataType<>(ImprovedMaps.id("map_biomes_" + id.id()), MapBiomes::new, CODEC,
-                DataFixTypes.SAVED_DATA_MAP_DATA);
+        return new SavedData.Factory<>(MapBiomes::new, MapBiomes::load, DataFixTypes.SAVED_DATA_MAP_DATA);
+    }
+
+    private static String fileName(MapId id) {
+        return ImprovedMaps.MOD_ID + "_map_biomes_" + id.id();
     }
 
     // Map data lives in the overworld's storage whichever dimension the map is of, so the biome
     // record has to sit beside it or the two drift apart.
     public static MapBiomes getOrCreate(MinecraftServer server, MapId id) {
-        return server.overworld().getDataStorage().computeIfAbsent(type(id));
+        return server.overworld().getDataStorage().computeIfAbsent(factory(), fileName(id));
     }
 
     // Null when nothing has ever been recorded for this map, which is the normal state for maps
     // explored before the feature was switched on. Kept separate from getOrCreate so that merely
     // looking at a map does not write a file for it.
     public static MapBiomes find(MinecraftServer server, MapId id) {
-        return server.overworld().getDataStorage().get(type(id));
+        return server.overworld().getDataStorage().get(factory(), fileName(id));
     }
 
     // Whether this pixel has ever been recorded. Lets the capture skip the biome lookup for ground

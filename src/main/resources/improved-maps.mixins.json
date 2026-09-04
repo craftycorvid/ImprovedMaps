@@ -1,14 +1,13 @@
 {
 	"required": true,
 	"package": "com.craftycorvid.improvedmaps.mixin",
-	"compatibilityLevel": "JAVA_25",
+	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"BundleContentsBuilderMixin",
 		"MapBiomeCaptureMixin",
 		"MapBiomeSyncMixin",
 		"MapStateMixin",
 		"CartographyTableMixin",
-		"CartographyTableMixin$ScreenHandlerAccessor",
 		"CartographyTableMixin$SecondSlotMixin",
 		"CartographyTableMixin$ResultSlotMixin"
 	],

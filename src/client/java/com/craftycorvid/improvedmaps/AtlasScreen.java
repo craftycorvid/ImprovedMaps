@@ -6,16 +6,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.joml.Matrix3x2fStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.state.MapRenderState;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -175,9 +172,8 @@ public final class AtlasScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY,
-            float partialTick) {
-        super.extractRenderState(g, mouseX, mouseY, partialTick);
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
         drawBook(g);
         Minecraft mc = this.minecraft;
         ClientLevel level = mc.level;
@@ -202,7 +198,7 @@ public final class AtlasScreen extends Screen {
             scale = data.scale;
         }
         if (minCol > maxCol) { // nothing placeable yet - the reply is still in flight
-            g.text(font, LOADING.getVisualOrderText(),
+            g.drawString(font, LOADING.getVisualOrderText(),
                     viewX + (viewW - font.width(LOADING)) / 2, viewY + viewH / 2, COVER_SHADOW,
                     false);
             return;
@@ -219,36 +215,33 @@ public final class AtlasScreen extends Screen {
 
         // Panned or zoomed maps stop at the parchment rather than spilling over the cover.
         g.enableScissor(viewX, viewY, viewX + viewW, viewY + viewH);
-        Matrix3x2fStack pose = g.pose();
-        pose.pushMatrix();
-        pose.translate((float) originX(pixelScale), (float) originY(pixelScale));
-        pose.scale(pixelScale, pixelScale);
+        PoseStack pose = g.pose();
+        pose.pushPose();
+        pose.translate((float) originX(pixelScale), (float) originY(pixelScale), 0f);
+        pose.scale(pixelScale, pixelScale, 1f);
         for (MapId id : ids) {
             MapCenter center = CENTERS.get(id);
             MapItemSavedData data = center == null ? null : level.getMapData(id);
             if (data == null)
                 continue;
 
-            MapRenderState state = new MapRenderState();
-            mc.getMapRenderer().extractRenderState(id, data, state);
-            // g.map() draws maps item-frame style, which keeps banners and structure markers but
-            // hides the player-position family (their type has showOnItemFrame=false). That is what
-            // we want everywhere but the active map: tickCarriedBy only refreshes a player's marker
-            // on the map being carried, so on every other map it is frozen wherever they last
-            // stood. Force the flag on for the active map alone, where the position is live.
-            if (id.equals(activeMapId)) {
-                for (MapRenderState.MapDecorationRenderState decoration : state.decorations) {
-                    decoration.renderOnFrame = true;
-                }
-            }
+            // Item-frame style keeps banners and structure markers but hides the player-position
+            // family (their type has showOnItemFrame=false). That is what we want everywhere but
+            // the active map: tickCarriedBy only refreshes a player's marker on the map being
+            // carried, so on every other map it is frozen wherever they last stood. The active map
+            // is drawn held-map style, where the position is live.
+            boolean onFrame = !id.equals(activeMapId);
 
-            pose.pushMatrix();
+            pose.pushPose();
             pose.translate((col(center, data) - minCol) * MAP_PX,
-                    (row(center, data) - minRow) * MAP_PX);
-            g.map(state);
-            pose.popMatrix();
+                    (row(center, data) - minRow) * MAP_PX, 0f);
+            mc.gameRenderer.getMapRenderer().render(pose, g.bufferSource(), id, data, onFrame,
+                    LightTexture.FULL_BRIGHT);
+            pose.popPose();
         }
-        pose.popMatrix();
+        // Maps are drawn into a batched buffer; flush inside the scissor that is meant to clip them.
+        g.flush();
+        pose.popPose();
         g.disableScissor();
 
         drawCursorPosition(g, mouseX, mouseY, pixelScale, minCol, minRow, scale);
@@ -257,7 +250,7 @@ public final class AtlasScreen extends Screen {
     // Where in the world the cursor is pointing, on the cover below the page. Only while it is over
     // the page - off it there is nothing under the cursor to report. Still drawn past the edge of
     // the explored grid, where it says where the unexplored ground is.
-    private void drawCursorPosition(GuiGraphicsExtractor g, int mouseX, int mouseY,
+    private void drawCursorPosition(GuiGraphics g, int mouseX, int mouseY,
             float pixelScale, int minCol, int minRow, int scale) {
         if (mouseX < viewX || mouseX >= viewX + viewW || mouseY < viewY || mouseY >= viewY + viewH)
             return;
@@ -267,7 +260,7 @@ public final class AtlasScreen extends Screen {
         // The bare strip of cover between the parchment's bottom edge and the cover's own, right
         // aligned with the page. White with a shadow: the palette's browns are what the page is
         // drawn in, and they disappear against leather.
-        g.text(font, text, viewX + viewW - font.width(text),
+        g.drawString(font, text, viewX + viewW - font.width(text),
                 viewY + viewH + BORDER_PX + (pageInset - font.lineHeight) / 2, 0xFFFFFFFF, true);
     }
 
@@ -279,7 +272,7 @@ public final class AtlasScreen extends Screen {
         return minCell * (MAP_PX << scale) - 64 + gridPixel * (1 << scale);
     }
 
-    private void drawBook(GuiGraphicsExtractor g) {
+    private void drawBook(GuiGraphics g) {
         int x0 = coverX;
         int y0 = coverY;
         int x1 = coverX + coverW;
@@ -308,7 +301,7 @@ public final class AtlasScreen extends Screen {
     }
 
     // One corner clasp: an L reaching along both edges from (x, y), pointing (dx, dy).
-    private static void clasp(GuiGraphicsExtractor g, int x, int y, int dx, int dy, int arm,
+    private static void clasp(GuiGraphics g, int x, int y, int dx, int dy, int arm,
             int thick) {
         int armX = x + arm * dx;
         int armY = y + arm * dy;
@@ -324,7 +317,7 @@ public final class AtlasScreen extends Screen {
     // map_background.png is a flat interior inside a ragged torn edge, so the middle stretches and
     // the border stays at a fixed scale; stretching the whole texture turns a 3px edge into chunky
     // teeth once the page is most of the screen.
-    private void parchment(GuiGraphicsExtractor g) {
+    private void parchment(GuiGraphics g) {
         int pageX = viewX - BORDER_PX;
         int pageY = viewY - BORDER_PX;
         int inner = PARCHMENT_TEXTURE - PARCHMENT_BORDER * 2;
@@ -348,13 +341,13 @@ public final class AtlasScreen extends Screen {
         slice(g, PARCHMENT_BORDER, PARCHMENT_BORDER, inner, inner, viewX, viewY, viewW, viewH);
     }
 
-    private static void slice(GuiGraphicsExtractor g, int u, int v, int regionW, int regionH,
+    private static void slice(GuiGraphics g, int u, int v, int regionW, int regionH,
             int x, int y, int w, int h) {
-        g.blit(RenderPipelines.GUI_TEXTURED, MinimapHud.MAP_BACKGROUND, x, y, u, v, w, h, regionW,
-                regionH, PARCHMENT_TEXTURE, PARCHMENT_TEXTURE);
+        g.blit(MinimapHud.MAP_BACKGROUND, x, y, w, h, (float) u, (float) v, regionW, regionH,
+                PARCHMENT_TEXTURE, PARCHMENT_TEXTURE);
     }
 
-    private static void rect(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int colour) {
+    private static void rect(GuiGraphics g, int x1, int y1, int x2, int y2, int colour) {
         g.fill(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2), Math.max(y1, y2), colour);
     }
 
@@ -378,7 +371,8 @@ public final class AtlasScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX,
+            double dragY) {
         if (gridWidth == 0)
             return false;
         panX += dragX;
@@ -388,12 +382,12 @@ public final class AtlasScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (ImprovedMapsClient.OPEN_ATLAS.matches(event)) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (ImprovedMapsClient.OPEN_ATLAS.matches(keyCode, scanCode)) {
             onClose();
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

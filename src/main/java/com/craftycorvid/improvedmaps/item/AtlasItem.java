@@ -1,18 +1,17 @@
 package com.craftycorvid.improvedmaps.item;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
@@ -22,23 +21,22 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.component.BundleContents;
-import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
-import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import com.craftycorvid.improvedmaps.AtlasTooltipData;
 import com.craftycorvid.improvedmaps.ImprovedMapsComponentTypes;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.internal.ICustomBundleContentBuilder;
 import eu.pb4.polymer.core.api.item.PolymerItem;
+import eu.pb4.polymer.resourcepack.api.PolymerModelData;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 
 import static com.craftycorvid.improvedmaps.ImprovedMaps.MOD_CONFIG;
@@ -46,53 +44,62 @@ import static com.craftycorvid.improvedmaps.ImprovedMaps.id;
 import static com.craftycorvid.improvedmaps.ImprovedMapsNetworking.PLAYERS_WITH_CLIENT;
 
 public class AtlasItem extends BundleItem implements PolymerItem {
-    private static final int FULL_ITEM_BAR_COLOR = ARGB.colorFromFloat(1.0F, 1.0F, 0.33F, 0.33F);
-    private static final int ITEM_BAR_COLOR = ARGB.colorFromFloat(1.0F, 0.44F, 0.53F, 1.0F);
+    private static final int FULL_ITEM_BAR_COLOR = Mth.color(1.0F, 0.33F, 0.33F);
+    private static final int ITEM_BAR_COLOR = Mth.color(0.44F, 0.53F, 1.0F);
+
+    // A vanilla client draws the atlas from the Polymer resource pack: a book carrying the custom
+    // model data these hand out, one model per dimension.
+    private static final PolymerModelData OVERWORLD_MODEL = model("atlas_overworld");
+    private static final PolymerModelData NETHER_MODEL = model("atlas_nether");
+    private static final PolymerModelData END_MODEL = model("atlas_end");
+    private static final PolymerModelData UNKNOWN_MODEL = model("atlas_unknown");
+
+    private static PolymerModelData model(String name) {
+        return PolymerResourcePackUtils.requestModel(Items.BOOK, id("item/" + name));
+    }
 
     public AtlasItem(Properties settings) {
         super(settings);
     }
 
-    @Override
-    public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
-        // A client that cannot resolve our item id drops the connection over it.
-        ServerPlayer player = eu.pb4.polymer.common.api.PolymerCommonUtils.getPlayer(context);
-        if (player != null && PLAYERS_WITH_CLIENT.contains(player.getUUID()))
-            return this;
-        else
-            return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;
+    private static PolymerModelData modelFor(ItemStack stack) {
+        return switch (stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "")) {
+            case "minecraft:overworld" -> OVERWORLD_MODEL;
+            case "minecraft:the_nether" -> NETHER_MODEL;
+            case "minecraft:the_end" -> END_MODEL;
+            default -> UNKNOWN_MODEL;
+        };
     }
 
     @Override
-    public Identifier getPolymerItemModel(ItemStack itemStack, PacketContext context, HolderLookup.Provider lookup) {
-        if (PolymerResourcePackUtils.hasMainPack(context)) {
-            return id("atlas");
-        } else {
-            return Identifier.fromNamespaceAndPath("minecraft", "book");
-        }
+    public Item getPolymerItem(ItemStack itemStack, ServerPlayer player) {
+        // A client that cannot resolve our item id drops the connection over it.
+        if (player != null && PLAYERS_WITH_CLIENT.contains(player.getUUID()))
+            return this;
+        if (PolymerResourcePackUtils.hasMainPack(player))
+            return modelFor(itemStack).item();
+        return itemStack.getCount() > 1 ? Items.BOOK : Items.BUNDLE;
+    }
+
+    @Override
+    public int getPolymerCustomModelData(ItemStack itemStack, ServerPlayer player) {
+        return PolymerResourcePackUtils.hasMainPack(player) ? modelFor(itemStack).value() : -1;
     }
 
     @Override
     public ItemStack getPolymerItemStack(ItemStack itemStack, TooltipFlag tooltipType,
-            PacketContext context, HolderLookup.Provider lookup) {
-        ItemStack clientStack = PolymerItem.super.getPolymerItemStack(itemStack, tooltipType, context, lookup);
-
-        String dimension = itemStack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "");
-
-        List<String> stringList = new ArrayList<>();
-        stringList.add(dimension);
-
-        clientStack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
-                new ArrayList<>(), new ArrayList<>(), stringList, new ArrayList<>()));
+            HolderLookup.Provider lookup, ServerPlayer player) {
+        ItemStack clientStack = PolymerItem.super.getPolymerItemStack(itemStack, tooltipType, lookup, player);
         // Polymer builds the client stack from a whitelist of components, so our own never make
         // the trip. The minimap picks its atlas by dimension, so put that one back - the component
         // gates itself to clients running the mod, a vanilla one drops it at encode.
-        clientStack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION, dimension);
+        clientStack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
+                itemStack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, ""));
         return clientStack;
     }
 
     @Override
-    public void modifyClientTooltip(List<Component> tooltip, ItemStack stack, PacketContext context) {
+    public void modifyClientTooltip(List<Component> tooltip, ItemStack stack, ServerPlayer player) {
         String dimension = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, null);
         Byte scale = stack.getOrDefault(ImprovedMapsComponentTypes.ATLAS_SCALE, null);
         int filled_maps = stack
@@ -122,7 +129,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         if (activeState != null) {
             stack.set(ImprovedMapsComponentTypes.ATLAS_SCALE, activeState.scale);
             stack.set(ImprovedMapsComponentTypes.ATLAS_DIMENSION,
-                    activeState.dimension.identifier().toString());
+                    activeState.dimension.location().toString());
         }
         stack.set(DataComponents.MAP_ID, mapIdComponent);
     }
@@ -151,16 +158,14 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 MapItemSavedData mapState = MapItem.getSavedData(itemStack, player.level());
 
                 if (mapState == null || mapState.scale != scale
-                        || !mapState.dimension.identifier().toString().equals(dimension))
+                        || !mapState.dimension.location().toString().equals(dimension))
                     return false;
 
                 if (builder.tryTransfer(slot, player) > 0) {
-                    BundleItem.playInsertSound(player);
-                } else {
-                    BundleItem.playInsertFailSound(player);
+                    this.playInsertSound(player);
                 }
                 atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
-                this.broadcastChangesOnContainerMenu(player);
+                player.containerMenu.broadcastChanges();
                 return true;
             }
         } else if (clickType == ClickAction.SECONDARY && itemStack.isEmpty()) {
@@ -171,12 +176,12 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 if (itemStack3.getCount() > 0) {
                     builder.tryInsert(itemStack3);
                 } else {
-                    BundleItem.playRemoveOneSound(player);
+                    this.playRemoveOneSound(player);
                 }
             }
 
             atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
-            this.broadcastChangesOnContainerMenu(player);
+            player.containerMenu.broadcastChanges();
             return true;
         }
         return false;
@@ -190,7 +195,6 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         if (atlas.getCount() > 1)
             return false;
         if (clickType == ClickAction.PRIMARY && otherStack.isEmpty()) {
-            toggleSelectedItem(atlas, -1);
             return false;
         }
 
@@ -209,19 +213,16 @@ public class AtlasItem extends BundleItem implements PolymerItem {
                 MapItemSavedData mapState = MapItem.getSavedData(otherStack, player.level());
 
                 if (mapState == null || mapState.scale != scale
-                        || !mapState.dimension.identifier().toString().equals(dimension)) {
-                    BundleItem.playInsertFailSound(player);
+                        || !mapState.dimension.location().toString().equals(dimension)) {
                     return false;
                 }
 
                 if (slot.allowModification(player) && builder.tryInsert(otherStack) > 0) {
-                    BundleItem.playInsertSound(player);
-                } else {
-                    BundleItem.playInsertFailSound(player);
+                    this.playInsertSound(player);
                 }
 
                 atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
-                this.broadcastChangesOnContainerMenu(player);
+                player.containerMenu.broadcastChanges();
                 return true;
             }
         } else if (clickType == ClickAction.SECONDARY && otherStack.isEmpty()) {
@@ -229,12 +230,12 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             if (slot.allowModification(player)) {
                 ItemStack itemStack = builder.removeOne();
                 if (itemStack != null) {
-                    BundleItem.playRemoveOneSound(player);
+                    this.playRemoveOneSound(player);
                     cursorStackReference.set(itemStack);
                 } else {
                     int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                     if (emptyCount > 0) {
-                        BundleItem.playRemoveOneSound(player);
+                        this.playRemoveOneSound(player);
                         cursorStackReference.set(new ItemStack(Items.MAP, emptyCount));
                         atlas.set(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
                     }
@@ -242,10 +243,9 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             }
 
             atlas.set(DataComponents.BUNDLE_CONTENTS, builder.toImmutable());
-            this.broadcastChangesOnContainerMenu(player);
+            player.containerMenu.broadcastChanges();
             return true;
         }
-        toggleSelectedItem(atlas, -1);
         return false;
     }
 
@@ -278,32 +278,32 @@ public class AtlasItem extends BundleItem implements PolymerItem {
 
     // Disable onUse for AtlasItem
     @Override
-    public InteractionResult use(Level world, Player user, InteractionHand hand) {
-        return InteractionResult.PASS;
+    public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
+        return InteractionResultHolder.pass(user.getItemInHand(hand));
     }
 
     @Override
-    public ItemUseAnimation getUseAnimation(ItemStack stack) {
-        return ItemUseAnimation.NONE;
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.NONE;
     }
 
-    // Render the bundle tooltip's fullness bar against atlasMapCapacity instead of the
-    // vanilla 64-item bundle weight. The client maps AtlasTooltipData -> a ClientBundleTooltip
-    // with this scaled fullness (see ImprovedMapsClient + ClientBundleTooltipMixin).
+    // The vanilla bundle tooltip greys its slots out once the contents weigh a full bundle, which
+    // an atlas hits at 64 maps however large atlasMapCapacity is. The client maps AtlasTooltipData
+    // -> a ClientBundleTooltip that is only "full" at capacity (see ImprovedMapsClient +
+    // ClientBundleTooltipMixin).
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
         BundleContents contents = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         if (contents.isEmpty())
             return super.getTooltipImage(stack);
-        int used = Math.min(contents.size(), MOD_CONFIG.server_atlasMapCapacity);
         return Optional.of(new AtlasTooltipData(contents,
-                org.apache.commons.lang3.math.Fraction.getFraction(used, MOD_CONFIG.server_atlasMapCapacity)));
+                contents.size() >= MOD_CONFIG.server_atlasMapCapacity));
     }
 
     @Override
     public int getBarWidth(ItemStack stack) {
         int usedSpace = stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY).size();
-        return (int) Math.clamp(Math.floor(13f * usedSpace / MOD_CONFIG.server_atlasMapCapacity), 1, 13);
+        return (int) Mth.clamp(Math.floor(13f * usedSpace / MOD_CONFIG.server_atlasMapCapacity), 1, 13);
     }
 
     @Override

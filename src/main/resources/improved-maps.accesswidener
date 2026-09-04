@@ -1,5 +1,7 @@
-accessWidener v2 official
+accessWidener v2 named
+# BundleContents.Mutable.getMaxAmountToAdd is overridden to scale with atlasMapCapacity; the
+# weight it divides by is package-private.
+accessible method net/minecraft/world/item/component/BundleContents getWeight (Lnet/minecraft/world/item/ItemStack;)Lorg/apache/commons/lang3/math/Fraction;
+# Bundle sounds for the atlas's own insert/remove handling.
 accessible method net/minecraft/world/item/BundleItem playRemoveOneSound (Lnet/minecraft/world/entity/Entity;)V
 accessible method net/minecraft/world/item/BundleItem playInsertSound (Lnet/minecraft/world/entity/Entity;)V
-accessible method net/minecraft/world/item/BundleItem playInsertFailSound (Lnet/minecraft/world/entity/Entity;)V
-accessible method net/minecraft/world/item/BundleItem broadcastChangesOnContainerMenu (Lnet/minecraft/world/entity/player/Player;)V

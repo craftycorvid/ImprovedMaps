@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,17 +28,17 @@ public final class ImprovedMapsLifecycleEvents {
                 continue;
             ItemStack mainHand = player.getItemInHand(InteractionHand.MAIN_HAND);
             if (mainHand.is(ImprovedMapsItems.ATLAS))
-                AtlasPlayerHandTick(player, mainHand, EquipmentSlot.MAINHAND);
+                AtlasPlayerHandTick(player, mainHand);
             ItemStack offHand = player.getItemInHand(InteractionHand.OFF_HAND);
             if (offHand.is(ImprovedMapsItems.ATLAS))
-                AtlasPlayerHandTick(player, offHand, EquipmentSlot.OFFHAND);
+                AtlasPlayerHandTick(player, offHand);
 
             if (MOD_CONFIG.server_updateAtlasWhenNotInHand) {
                 for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                     ItemStack stack = player.getInventory().getItem(i);
                     if (stack.is(ImprovedMapsItems.ATLAS) &&
                             !stack.equals(mainHand) && !stack.equals(offHand)) {
-                        AtlasPlayerHandTick(player, stack, EquipmentSlot.MAINHAND);
+                        AtlasPlayerHandTick(player, stack);
                     }
                 }
             }
@@ -78,11 +77,10 @@ public final class ImprovedMapsLifecycleEvents {
         }
     }
 
-    public static void AtlasPlayerHandTick(ServerPlayer player, ItemStack atlas,
-            EquipmentSlot slot) {
+    public static void AtlasPlayerHandTick(ServerPlayer player, ItemStack atlas) {
         initializeEmptyAtlas(player, atlas);
 
-        ServerLevel world = player.level();
+        ServerLevel world = player.serverLevel();
         List<ItemStack> currentDimMapItemStacks = getCurrentDimMapsFromAtlas(world, atlas);
         ItemStack mapStack = getActiveAtlasMap(currentDimMapItemStacks, player);
         if (mapStack == null)
@@ -92,7 +90,7 @@ public final class ImprovedMapsLifecycleEvents {
         // Create new Map entries
         if (isPlayerOutsideAllMapRegions(activeState, player)
                 && atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_DIMENSION, "")
-                        .equals(world.dimension().identifier().toString())) {
+                        .equals(world.dimension().location().toString())) {
             ItemStack newMap = maybeCreateNewMapEntry(player, atlas, activeState,
                     Mth.floor(player.getX()), Mth.floor(player.getZ()));
             if (newMap != null)
@@ -101,7 +99,9 @@ public final class ImprovedMapsLifecycleEvents {
 
         if (mapStack.is(Items.FILLED_MAP)) {
             atlas.set(DataComponents.MAP_ID, mapStack.get(DataComponents.MAP_ID));
-            mapStack.inventoryTick(world, player, slot);
+            // Selected: the map fills in whichever slot the atlas is carried in, which is what
+            // the atlas is for. Slot index only matters to items that care which one they sit in.
+            mapStack.inventoryTick(world, player, player.getInventory().selected, true);
         }
     }
 
@@ -127,8 +127,8 @@ public final class ImprovedMapsLifecycleEvents {
         return getAllMapsFromAtlas(world, atlas).stream().filter(map -> {
             MapItemSavedData mapState = MapItem.getSavedData(map, world);
             return mapState != null
-                    ? mapState.dimension.identifier()
-                            .compareTo(world.dimension().identifier()) == 0
+                    ? mapState.dimension.location()
+                            .compareTo(world.dimension().location()) == 0
                     : false;
         }).toList();
     }

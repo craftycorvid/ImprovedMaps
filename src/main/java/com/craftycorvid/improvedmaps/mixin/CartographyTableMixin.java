@@ -4,7 +4,6 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -13,7 +12,6 @@ import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
@@ -139,13 +137,6 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
         this.setRemoteSlot(CartographyTableMenu.RESULT_SLOT, ItemStack.EMPTY);
     }
 
-    // to access the Cartography Table screen and its data in the ResultSlotMixin
-    @Mixin(AbstractContainerMenu.class)
-    public interface ScreenHandlerAccessor {
-        @Accessor
-        NonNullList<Slot> getSlots();
-    }
-
     // target CartographyTableScreenHandler's second slot
     @Mixin(targets = "net/minecraft/world/inventory/CartographyTableMenu$4")
     public static abstract class SecondSlotMixin extends Slot {
@@ -166,13 +157,13 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
             super(inventory, slot, x, y);
         }
 
-        @Shadow
-        @Final
-        CartographyTableMenu this$0;
-
         @Inject(method = "onTake", at = @At("HEAD"), cancellable = true)
         public void onTake(Player player, ItemStack stack, CallbackInfo ci) {
-            var slots = ((ScreenHandlerAccessor) this$0).getSlots();
+            // The menu, rather than the anonymous slot's synthetic outer reference: that field has
+            // no mapped name, so shadowing it would tie this mixin to a mapping detail.
+            if (!(player.containerMenu instanceof CartographyTableMenu menu))
+                return;
+            var slots = menu.slots;
             var firstSlot = slots.get(0).getItem();
             var secondSlot = slots.get(1).getItem();
 
@@ -189,7 +180,7 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
                 if (!player.getInventory().add(atlasResult)) {
                     player.drop(atlasResult, false);
                 }
-                this$0.broadcastChanges();
+                menu.broadcastChanges();
                 ci.cancel();
             }
         }

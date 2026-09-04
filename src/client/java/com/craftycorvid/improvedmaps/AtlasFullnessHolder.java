@@ -1,9 +1,7 @@
 package com.craftycorvid.improvedmaps;
 
-import org.apache.commons.lang3.math.Fraction;
-
-// Implemented (via mixin) by ClientBundleTooltip so the tooltip callback can hand
-// it an atlas's capacity-scaled fullness to use for the progress bar.
+// Implemented (via mixin) by ClientBundleTooltip so the tooltip callback can tell it whether an
+// atlas is full at atlasMapCapacity, instead of at the vanilla 64-item bundle weight.
 public interface AtlasFullnessHolder {
-    void improvedmaps$setFullness(Fraction fullness);
+    void improvedmaps$setFull(boolean full);
 }

@@ -1,11 +1,10 @@
 package com.craftycorvid.improvedmaps;
 
-import org.apache.commons.lang3.math.Fraction;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.component.BundleContents;
 
-// Carries the atlas's bundle contents plus a capacity-scaled fullness so the
-// client can render a bundle tooltip whose progress bar reflects atlasMapCapacity
-// instead of the vanilla 64-item bundle weight.
-public record AtlasTooltipData(BundleContents contents, Fraction fullness) implements TooltipComponent {
+// Carries the atlas's bundle contents plus whether it is actually full, so the client can render a
+// bundle tooltip whose slots are greyed out at atlasMapCapacity instead of at the vanilla 64-item
+// bundle weight (see ImprovedMapsClient + ClientBundleTooltipMixin).
+public record AtlasTooltipData(BundleContents contents, boolean full) implements TooltipComponent {
 }

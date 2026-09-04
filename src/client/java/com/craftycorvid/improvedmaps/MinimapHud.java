@@ -1,19 +1,18 @@
 package com.craftycorvid.improvedmaps;
 
 import java.util.List;
-import org.joml.Matrix3x2fStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.state.MapRenderState;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -31,13 +30,13 @@ public final class MinimapHud {
     // Drawn with a shadow: the readout sits on the world, not on the parchment.
     private static final int READOUT_COLOUR = 0xFFFFFFFF;
     // Also the page of the atlas grid view (AtlasScreen), nine-sliced there.
-    static final Identifier MAP_BACKGROUND = Identifier.fromNamespaceAndPath("minecraft",
+    static final ResourceLocation MAP_BACKGROUND = ResourceLocation.withDefaultNamespace(
             "textures/map/map_background.png");
     // Remembered main-hand hotbar slot of the last-held atlas; -1 = none.
     private static int trackedSlot = -1;
 
-    // HudElement: called every frame during the GUI extract phase.
-    public static void render(GuiGraphicsExtractor g, DeltaTracker delta) {
+    // HudRenderCallback: called every frame, after the vanilla HUD.
+    public static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         MapId mapId = activeMapId(mc);
         if (mapId == null)
@@ -47,15 +46,6 @@ public final class MinimapHud {
         MapItemSavedData data = level == null ? null : level.getMapData(mapId);
         if (data == null)
             return;
-
-        MapRenderState state = new MapRenderState();
-        mc.getMapRenderer().extractRenderState(mapId, data, state);
-        // g.map() draws maps item-frame style: it skips decorations whose type has
-        // showOnItemFrame=false (the player marker, off-map pointers, ...). Force the
-        // flag on so the minimap shows every decoration, like a held map.
-        for (MapRenderState.MapDecorationRenderState decoration : state.decorations) {
-            decoration.renderOnFrame = true;
-        }
 
         int size = size();
         int border = border(size);
@@ -67,22 +57,26 @@ public final class MinimapHud {
 
         // Parchment backing: frames the map and fills unexplored (transparent) map
         // pixels.
-        g.blit(RenderPipelines.GUI_TEXTURED, MAP_BACKGROUND, wx, wy, 0f, 0f, widget, widget, widget, widget);
+        g.blit(MAP_BACKGROUND, wx, wy, 0f, 0f, widget, widget, widget, widget);
 
-        // map() draws a 128x128 map (texture + decorations) at the current pose origin.
-        Matrix3x2fStack pose = g.pose();
-        pose.pushMatrix();
-        pose.translate(wx + border, wy + border);
-        pose.scale(mapScale(size), mapScale(size));
-        g.map(state);
-        pose.popMatrix();
+        // The map renderer draws a 128x128 map (texture + decorations) at the current pose origin.
+        // Not item-frame style: that skips the decorations whose type has showOnItemFrame=false
+        // (the player marker, off-map pointers, ...), which is exactly what a minimap needs.
+        PoseStack pose = g.pose();
+        pose.pushPose();
+        pose.translate(wx + border, wy + border, 0f);
+        pose.scale(mapScale(size), mapScale(size), 1f);
+        mc.gameRenderer.getMapRenderer().render(pose, g.bufferSource(), mapId, data, false,
+                LightTexture.FULL_BRIGHT);
+        g.flush();
+        pose.popPose();
 
         drawReadout(g, mc, wx, wy, widget, mapScale(size));
     }
 
     // Position and biome, centred on the widget. Below it in the top corners, above it in the
     // bottom two - "below" there would put the text behind the hotbar and experience bar.
-    private static void drawReadout(GuiGraphicsExtractor g, Minecraft mc, int wx, int wy,
+    private static void drawReadout(GuiGraphics g, Minecraft mc, int wx, int wy,
             int widget, float scale) {
         List<Component> lines = readoutLines(mc);
         if (lines.isEmpty())
@@ -96,16 +90,16 @@ public final class MinimapHud {
         // Drawn at the map's own pixel scale, so the readout keeps its proportions whatever the
         // minimap is sized to. Centred by translating to the middle of the widget first and then
         // halving each line about it: font.width is in unscaled units, like the offsets below it.
-        Matrix3x2fStack pose = g.pose();
-        pose.pushMatrix();
-        pose.translate(wx + widget / 2f, y);
-        pose.scale(scale, scale);
+        PoseStack pose = g.pose();
+        pose.pushPose();
+        pose.translate(wx + widget / 2f, y, 0f);
+        pose.scale(scale, scale, 1f);
         int lineY = 0;
         for (Component line : lines) {
-            g.text(font, line, -font.width(line) / 2, lineY, READOUT_COLOUR, true);
+            g.drawString(font, line, -font.width(line) / 2, lineY, READOUT_COLOUR, true);
             lineY += font.lineHeight;
         }
-        pose.popMatrix();
+        pose.popPose();
     }
 
     // The readout's lines, or empty when it isn't drawing. rightInset needs their width too, so
@@ -122,7 +116,7 @@ public final class MinimapHud {
         // an unregistered one no key at all; drop the line rather than print a raw identifier.
         return level.getBiome(player.blockPosition()).unwrapKey()
                 .map(key -> List.of(position, Component
-                        .translatable(Util.makeDescriptionId("biome", key.identifier()))))
+                        .translatable(Util.makeDescriptionId("biome", key.location()))))
                 .orElse(List.of(position));
     }
 
@@ -184,11 +178,11 @@ public final class MinimapHud {
     // dimension. Also what the atlas grid view (AtlasScreen) opens on.
     static ItemStack resolveAtlas(LocalPlayer player) {
         Inventory inv = player.getInventory();
-        String dimension = player.level().dimension().identifier().toString();
+        String dimension = player.level().dimension().location().toString();
 
         ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (atlasFor(main, dimension)) {
-            trackedSlot = inv.getSelectedSlot();
+            trackedSlot = inv.selected;
             return main;
         }
         // Off-hand is always equipped, so an off-hand atlas counts as continuously

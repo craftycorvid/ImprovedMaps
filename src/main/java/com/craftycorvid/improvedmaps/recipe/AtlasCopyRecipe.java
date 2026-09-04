@@ -1,28 +1,24 @@
 package com.craftycorvid.improvedmaps.recipe;
 
 import java.util.List;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
-import net.minecraft.world.item.crafting.RecipeBookCategories;
-import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraft.world.level.Level;
-import com.mojang.serialization.MapCodec;
 import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
 
 public class AtlasCopyRecipe extends CustomRecipe {
-    public static final AtlasCopyRecipe INSTANCE = new AtlasCopyRecipe();
-    public static final MapCodec<AtlasCopyRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
-    public static final StreamCodec<RegistryFriendlyByteBuf, AtlasCopyRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
-    public static final RecipeSerializer<AtlasCopyRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+    public static final RecipeSerializer<AtlasCopyRecipe> SERIALIZER =
+            new SimpleCraftingRecipeSerializer<>(AtlasCopyRecipe::new);
 
-    public AtlasCopyRecipe() {
-        super();
+    public AtlasCopyRecipe(CraftingBookCategory category) {
+        super(category);
     }
 
     @Override
@@ -44,7 +40,7 @@ public class AtlasCopyRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput inventory) {
+    public ItemStack assemble(CraftingInput inventory, HolderLookup.Provider registries) {
         List<ItemStack> atlases = inventory.items().stream()
                 .filter(stack -> stack.is(ImprovedMapsItems.ATLAS)).toList();
 
@@ -53,12 +49,12 @@ public class AtlasCopyRecipe extends CustomRecipe {
     }
 
     @Override
-    public RecipeSerializer<AtlasCopyRecipe> getSerializer() {
-        return SERIALIZER;
+    public boolean canCraftInDimensions(int width, int height) {
+        return width * height >= 2;
     }
 
     @Override
-    public RecipeBookCategory recipeBookCategory() {
-        return RecipeBookCategories.CRAFTING_EQUIPMENT;
+    public RecipeSerializer<AtlasCopyRecipe> getSerializer() {
+        return SERIALIZER;
     }
 }

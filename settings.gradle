@@ -8,3 +8,8 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
+
+plugins {
+	// Lets Gradle fetch the Java 21 toolchain 1.21.1 needs when the machine has no JDK 21.
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}

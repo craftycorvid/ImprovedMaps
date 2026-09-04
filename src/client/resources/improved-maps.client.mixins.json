@@ -1,11 +1,12 @@
 {
 	"required": true,
 	"package": "com.craftycorvid.improvedmaps.mixin.client",
-	"compatibilityLevel": "JAVA_25",
+	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"ClientBundleTooltipMixin",
+		"GuiEffectsMixin",
 		"MapInstanceMixin",
-		"ToastManagerMixin"
+		"ToastComponentMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

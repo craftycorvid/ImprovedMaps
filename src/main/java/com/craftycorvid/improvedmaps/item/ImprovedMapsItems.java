@@ -4,10 +4,8 @@ import java.util.function.Function;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -38,7 +36,7 @@ public class ImprovedMapsItems {
         }
 
         public static final CreativeModeTab IMPROVED_MAPS_GROUP = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB,
-                        Identifier.fromNamespaceAndPath(ImprovedMaps.MOD_ID, "atlas_tab"),
+                        ResourceLocation.fromNamespaceAndPath(ImprovedMaps.MOD_ID, "atlas_tab"),
                         new CreativeModeTab.Builder(CreativeModeTab.Row.TOP, 0) // TOP row, first column
                                         .title(Component.translatable("itemGroup."
                                                         + ImprovedMaps.MOD_ID + ".atlas_tab"))
@@ -67,9 +65,6 @@ public class ImprovedMapsItems {
 
         public static Item register(String name, Function<Item.Properties, Item> itemFactory,
                         Item.Properties settings) {
-                ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, id(name));
-                Item item = itemFactory.apply(settings.setId(itemKey));
-                Registry.register(BuiltInRegistries.ITEM, itemKey, item);
-                return item;
+                return Registry.register(BuiltInRegistries.ITEM, id(name), itemFactory.apply(settings));
         }
 }
