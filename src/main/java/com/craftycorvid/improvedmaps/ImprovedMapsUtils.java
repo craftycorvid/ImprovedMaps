@@ -1,10 +1,18 @@
 package com.craftycorvid.improvedmaps;
 
+import java.util.stream.Stream;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.BundleContents;
 
 public class ImprovedMapsUtils {
+    // A copy of every stack in a bundle. BundleContents holds ItemStackTemplates since 26.3, and
+    // this is what its removed itemCopyStream() did.
+    public static Stream<ItemStack> bundleStacks(BundleContents contents) {
+        return contents.items().stream().map(ItemStackTemplate::create);
+    }
+
     public static String scaleToString(int scale) {
         switch (scale) {
             case 0:

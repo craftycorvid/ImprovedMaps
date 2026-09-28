@@ -149,11 +149,11 @@ public final class AtlasScreen extends Screen {
         BundleContents contents =
                 atlas.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         // Contents are only rebuilt when the component itself is replaced, which is what a sync
-        // does; itemCopyStream copies every stack, and an atlas holds up to atlasMapCapacity.
+        // does; bundleStacks copies every stack, and an atlas holds up to atlasMapCapacity.
         if (contents != lastContents) {
             lastContents = contents;
             ids.clear();
-            contents.itemCopyStream().forEach(map -> {
+            ImprovedMapsUtils.bundleStacks(contents).forEach(map -> {
                 MapId id = map.get(DataComponents.MAP_ID);
                 if (id != null)
                     ids.add(id);

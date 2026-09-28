@@ -116,7 +116,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
     public void onCraftedPostProcess(ItemStack stack, Level world) {
         BundleContents bundleContents = stack
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
-        ItemStack map = bundleContents.itemCopyStream().findFirst().orElse(ItemStack.EMPTY);
+        ItemStack map = ImprovedMapsUtils.bundleStacks(bundleContents).findFirst().orElse(ItemStack.EMPTY);
         MapId mapIdComponent = map.get(DataComponents.MAP_ID);
         MapItemSavedData activeState = MapItem.getSavedData(mapIdComponent, world);
         if (activeState != null) {
@@ -140,7 +140,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
             return false;
 
         ItemStack itemStack = slot.getItem();
-        BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
+        BundleContents.Mutable builder = bundleContentsComponent.asMutable();
         ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         if (clickType == ClickAction.PRIMARY && !itemStack.isEmpty()) {
             if (itemStack.is(Items.MAP)) {
@@ -198,7 +198,7 @@ public class AtlasItem extends BundleItem implements PolymerItem {
         if (bundleContentsComponent == null)
             return false;
 
-        BundleContents.Mutable builder = new BundleContents.Mutable(bundleContentsComponent);
+        BundleContents.Mutable builder = bundleContentsComponent.asMutable();
         ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         if (clickType == ClickAction.PRIMARY && !otherStack.isEmpty()) {
             if (otherStack.is(Items.MAP)) {
