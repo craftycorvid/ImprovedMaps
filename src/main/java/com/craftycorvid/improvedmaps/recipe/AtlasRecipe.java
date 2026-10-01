@@ -57,7 +57,7 @@ public class AtlasRecipe extends CustomRecipe {
         ItemStack map = inventory.items().stream().filter(stack -> stack.is(Items.FILLED_MAP))
                 .findFirst().orElse(null);
 
-        BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
+        BundleContents.Mutable builder = BundleContents.EMPTY.asMutable();
         ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         builder.tryInsert(map);
         map.grow(1);

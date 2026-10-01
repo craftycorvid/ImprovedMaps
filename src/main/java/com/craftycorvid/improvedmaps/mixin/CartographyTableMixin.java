@@ -18,6 +18,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -187,7 +188,7 @@ public abstract class CartographyTableMixin extends AbstractContainerMenu {
                 slots.get(0).set(ItemStack.EMPTY);
                 this.set(ItemStack.EMPTY);
                 if (!player.getInventory().add(atlasResult)) {
-                    player.drop(atlasResult, false);
+                    player.drop(atlasResult, false, Prediction.PREDICTED);
                 }
                 this$0.broadcastChanges();
                 ci.cancel();

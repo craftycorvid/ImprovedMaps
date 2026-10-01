@@ -55,7 +55,7 @@ public final class ImprovedMapsLifecycleEvents {
             BundleContents contents = atlas
                     .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
             if (contents.isEmpty()) {
-                BundleContents.Mutable builder = new BundleContents.Mutable(BundleContents.EMPTY);
+                BundleContents.Mutable builder = BundleContents.EMPTY.asMutable();
                 ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
 
                 int emptyCount = atlas
@@ -116,7 +116,7 @@ public final class ImprovedMapsLifecycleEvents {
         BundleContents bundleContents = atlas
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
         List<ItemStack> mapStacks = new ArrayList<>();
-        bundleContents.itemCopyStream().forEach((map) -> {
+        ImprovedMapsUtils.bundleStacks(bundleContents).forEach((map) -> {
             if (map.is(Items.FILLED_MAP))
                 mapStacks.add(map);
         });
@@ -161,7 +161,7 @@ public final class ImprovedMapsLifecycleEvents {
             MapItemSavedData activeState, int playerX, int playerZ) {
         BundleContents bundleContents = atlas
                 .getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
-        BundleContents.Mutable builder = new BundleContents.Mutable(bundleContents);
+        BundleContents.Mutable builder = bundleContents.asMutable();
         ((ICustomBundleContentBuilder) builder).setMaxSize(MOD_CONFIG.server_atlasMapCapacity);
         int emptyCount = atlas.getOrDefault(ImprovedMapsComponentTypes.ATLAS_EMPTY_MAP_COUNT, 0);
         if (emptyCount > 0 || player.isCreative()) {

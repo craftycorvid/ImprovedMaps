@@ -1,6 +1,5 @@
 package com.craftycorvid.improvedmaps;
 
-import org.lwjgl.glfw.GLFW;
 import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.AtlasMapCenters;
 import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.ClientReady;
 import com.craftycorvid.improvedmaps.ImprovedMapsNetworking.MapBiomesPayload;
@@ -25,7 +24,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public class ImprovedMapsClient implements ClientModInitializer {
 	public static final KeyMapping OPEN_ATLAS = new KeyMapping("key.improved-maps.open_atlas",
-			InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_M,
+			InputConstants.Type.KEYBOARD, InputConstants.KEY_M,
 			KeyMapping.Category.register(ImprovedMaps.id("atlas")));
 
 	@Override

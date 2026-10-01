@@ -261,8 +261,9 @@ public final class ImprovedMapsNetworking {
             ItemStack stack = player.getInventory().getItem(i);
             if (!stack.is(ImprovedMapsItems.ATLAS))
                 continue;
-            stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)
-                    .itemCopyStream().forEach(map -> {
+            ImprovedMapsUtils.bundleStacks(
+                    stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY))
+                    .forEach(map -> {
                         MapId id = map.get(DataComponents.MAP_ID);
                         if (id != null)
                             ids.add(id);

@@ -11,6 +11,7 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import com.craftycorvid.improvedmaps.ImprovedMapsUtils;
 import com.craftycorvid.improvedmaps.MapBiomes;
 import com.craftycorvid.improvedmaps.internal.IMapBiomeHolder;
 import com.craftycorvid.improvedmaps.item.ImprovedMapsItems;
@@ -54,8 +55,8 @@ public abstract class MapStateMixin extends SavedData implements IMapBiomeHolder
 			Operation<Boolean> original) {
 		for (ItemStack itemStack : inventory) {
 			if (itemStack.is(ImprovedMapsItems.ATLAS)
-					&& itemStack.getOrDefault(DataComponents.BUNDLE_CONTENTS,
-							BundleContents.EMPTY).itemCopyStream().anyMatch(predicate)) {
+					&& ImprovedMapsUtils.bundleStacks(itemStack.getOrDefault(
+							DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY)).anyMatch(predicate)) {
 				return true;
 			}
 		}
